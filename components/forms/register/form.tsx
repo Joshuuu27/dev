@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock, User, Store } from "lucide-react";
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/components/common/Toast";
 import {
@@ -17,8 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createSession } from "@/actions/auth-actions";
-
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -74,11 +72,10 @@ export function RegisterForm() {
       );
 
       const user = credential.user;
-      const idToken = await user.getIdToken();
 
-      // Update user profile with name and role in Firestore
+      // Save account to database (Firestore)
       try {
-        await fetch("/api/auth/register", {
+        const registerResponse = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -88,36 +85,24 @@ export function RegisterForm() {
             role,
           }),
         });
-      } catch (error) {
-        console.error("Error saving user profile:", error);
-        // Continue anyway - session creation is more important
+        if (!registerResponse.ok) {
+          const data = await registerResponse.json().catch(() => ({}));
+          console.error("Register API error:", data.error);
+        }
+      } catch (err) {
+        console.error("Error saving profile:", err);
       }
 
-      // Call the login API to create session
-      const loginResponse = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          uid: user.uid,
-          idToken,
-        }),
-      });
+      // Sign out so they land on login page (otherwise app redirects to dashboard)
+      await signOut(getAuth());
 
-      if (!loginResponse.ok) {
-        throw new Error("Failed to create session");
-      }
-
-      // Create session cookie
-      await createSession(user.uid);
-
+      setIsLoading(false);
       showToast({
         type: "success",
-        message: "User successfully registered.",
+        message: "Account created. Please sign in.",
         actionLabel: "Dismiss",
       });
-
-      router.refresh();
+      window.location.href = "/login";
     } catch (error: any) {
       const message =
         error?.code === "auth/email-already-in-use"
@@ -157,109 +142,93 @@ export function RegisterForm() {
           </SelectContent>
         </Select>
       </div>
-      {/* Full Name Field */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="fullName"
-          className="text-sm font-medium text-slate-700"
-        >
-          Full Name
-        </Label>
-        <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <Input
-            id="fullName"
-            type="text"
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your full name"
-            className="pl-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
-            required
-          />
+      {/* Layer 1: Name + Email */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="fullName" className="text-sm font-medium text-slate-700">
+            Full Name
+          </Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="fullName"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your full name"
+              className="pl-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+            Email Address
+          </Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              placeholder="Enter your email"
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              required
+            />
+          </div>
         </div>
       </div>
 
-      {/* Email Field */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="email"
-          className="text-sm font-medium text-slate-700"
-        >
-          Email Address
-        </Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <Input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            onChange={(e) => setEmail(e.target.value)}
-            className="pl-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
-            required
-          />
+      {/* Layer 2: Password + Confirm Password */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+            Password
+          </Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              placeholder="Create a password"
+              className="pl-10 pr-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Password Field */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="password"
-          className="text-sm font-medium text-slate-700"
-        >
-          Password
-        </Label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <Input
-            id="password"
-            onChange={(e) => setPassword(e.target.value)}
-            type={showPassword ? "text" : "password"}
-            placeholder="Create a password"
-            className="pl-10 pr-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            {showPassword ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Confirm Password Field */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="confirmPassword"
-          className="text-sm font-medium text-slate-700"
-        >
-          Confirm Password
-        </Label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <Input
-            id="confirmPassword"
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            type={showConfirmPassword ? "text" : "password"}
-            placeholder="Confirm your password"
-            className="pl-10 pr-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            {showConfirmPassword ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
-          </button>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
+            Confirm Password
+          </Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm your password"
+              className="pl-10 pr-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
 
