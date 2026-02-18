@@ -1,16 +1,3 @@
-import { db, firebaseAuth } from "./firebase.browser";
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  doc,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-  Timestamp,
-} from "firebase/firestore";
-
 export interface Trip {
   id: string;
   userId: string;
@@ -20,23 +7,15 @@ export interface Trip {
   toCoords?: { lat: number; lng: number };
   fare: number | null;
   status: "ongoing" | "completed" | "cancelled";
-  createdAt: Timestamp | Date;
-  completedAt?: Timestamp | Date;
+  createdAt: string | Date;
+  completedAt?: string | Date;
   startedAt: number;
   duration?: string;
   distance?: string;
 }
 
-const tripsCollection = collection(db, "trips");
-
 /**
- * Save a new trip when tracking starts
- * @param fromAddress Display name/address of starting point
- * @param fromCoords Coordinates of starting point {lat, lng}
- * @param toAddress Display name/address of destination
- * @param toCoords Coordinates of destination {lat, lng}
- * @param fare Calculated fare
- * @param authUserId Optional - pass from AuthContext to avoid sync issues with firebaseAuth.currentUser
+ * Save a new trip when tracking starts (via API so session cookie is used – no client Firestore auth needed)
  */
 export async function saveTrip(
   fromAddress: string,
@@ -44,27 +23,32 @@ export async function saveTrip(
   toAddress: string,
   toCoords: { lat: number; lng: number } | null,
   fare: number | null,
-  authUserId?: string | null
+  _authUserId?: string | null
 ): Promise<string> {
   try {
-    const userId = authUserId ?? firebaseAuth.currentUser?.uid;
-    if (!userId) {
-      throw new Error("User not authenticated");
-    }
-
-    const docRef = await addDoc(tripsCollection, {
-      userId,
-      fromAddress,
-      fromCoords: fromCoords || null,
-      toAddress,
-      toCoords: toCoords || null,
-      fare: fare ?? null,
-      status: "ongoing",
-      createdAt: serverTimestamp(),
-      startedAt: Date.now(),
+    const res = await fetch("/api/trips", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        fromAddress,
+        fromCoords: fromCoords || null,
+        toAddress,
+        toCoords: toCoords || null,
+        fare: fare ?? null,
+      }),
     });
 
-    return docRef.id;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        throw new Error("User not authenticated");
+      }
+      throw new Error(data.error || "Failed to save trip");
+    }
+
+    const data = await res.json();
+    return data.id;
   } catch (error) {
     console.error("Error saving trip:", error);
     throw error;
@@ -72,30 +56,19 @@ export async function saveTrip(
 }
 
 /**
- * Mark a trip as completed when tracking stops
+ * Mark a trip as completed when tracking stops (via API)
  */
 export async function completeTrip(tripId: string): Promise<void> {
   try {
-    const tripDocRef = doc(tripsCollection, tripId);
-    const tripSnap = await getDocs(
-      query(tripsCollection, where("__name__", "==", tripId))
-    );
-
-    if (tripSnap.empty) {
-      console.error("Trip not found:", tripId);
-      return;
-    }
-
-    const tripData = tripSnap.docs[0].data() as any;
-    const startedAt = tripData.startedAt || Date.now();
-    const durMs = Date.now() - startedAt;
-    const duration = Math.round(durMs / 60000) + " minutes";
-
-    await updateDoc(tripDocRef, {
-      status: "completed",
-      completedAt: serverTimestamp(),
-      duration,
+    const res = await fetch(`/api/trips/${tripId}`, {
+      method: "PATCH",
+      credentials: "include",
     });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to complete trip");
+    }
   } catch (error) {
     console.error("Error completing trip:", error);
     throw error;
@@ -103,29 +76,20 @@ export async function completeTrip(tripId: string): Promise<void> {
 }
 
 /**
- * Get all trips for the current user
+ * Get all trips for the current user (via API so no client Firestore permission needed)
  */
 export async function getUserTrips(): Promise<Trip[]> {
   try {
-    const userId = firebaseAuth.currentUser?.uid;
-    if (!userId) {
+    const res = await fetch("/api/trips", { credentials: "include" });
+    if (res.status === 401) {
       throw new Error("User not authenticated");
     }
-
-    const q = query(tripsCollection, where("userId", "==", userId));
-    const querySnapshot = await getDocs(q);
-
-    const trips = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    } as Trip));
-
-    // Sort by createdAt descending (most recent first)
-    return trips.sort((a, b) => {
-      const aTime = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : (a.createdAt as any).getTime?.() ?? 0;
-      const bTime = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : (b.createdAt as any).getTime?.() ?? 0;
-      return bTime - aTime;
-    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to fetch trips");
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching user trips:", error);
     throw error;

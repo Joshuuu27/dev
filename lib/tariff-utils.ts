@@ -41,20 +41,25 @@ const TARIFF_COLLECTION = "tariff";
 const TARIFF_DOC_ID = "fare_matrix";
 
 /**
- * Loads tariff data from Firestore, with caching and fallback to JSON
+ * Loads tariff data. In the browser we use only local JSON to avoid Firestore permission errors.
+ * Caching and fallback to JSON for consistency.
  */
 async function getTariffData(): Promise<FareMatrixItem[]> {
-  // Check cache first
   const now = Date.now();
   if (tariffDataCache && (now - tariffDataCacheTime) < TARIFF_CACHE_DURATION) {
     return tariffDataCache;
   }
 
+  // In the browser, never call Firestore (avoids "Missing or insufficient permissions")
+  if (typeof window !== "undefined") {
+    tariffDataCache = tariffData.fare_matrix;
+    tariffDataCacheTime = now;
+    return tariffDataCache;
+  }
+
   try {
-    // Try to load from Firestore
     const tariffRef = doc(db, TARIFF_COLLECTION, TARIFF_DOC_ID);
     const tariffSnap = await getDoc(tariffRef);
-    
     if (tariffSnap.exists()) {
       const data = tariffSnap.data();
       if (data.fare_matrix && Array.isArray(data.fare_matrix)) {
@@ -63,11 +68,10 @@ async function getTariffData(): Promise<FareMatrixItem[]> {
         return tariffDataCache;
       }
     }
-  } catch (error) {
-    console.error("Error loading tariff from Firestore:", error);
+  } catch {
+    // Fallback to JSON
   }
 
-  // Fallback to JSON data
   tariffDataCache = tariffData.fare_matrix;
   tariffDataCacheTime = now;
   return tariffDataCache;
@@ -196,31 +200,32 @@ export async function getCurrentGasPrice(): Promise<number | null> {
     return gasPriceCache;
   }
 
-  // Try Firestore first (if available)
-  try {
-    if (typeof window !== "undefined" && db) {
-      const SETTINGS_DOC_ID = "app_settings";
-      const GAS_PRICE_FIELD = "currentGasPrice";
-      const settingsRef = doc(db, "settings", SETTINGS_DOC_ID);
-      const settingsSnap = await getDoc(settingsRef);
-      
-      if (settingsSnap.exists()) {
-        const gasPrice = settingsSnap.data()[GAS_PRICE_FIELD];
-        if (gasPrice !== undefined && gasPrice !== null) {
-          const price = typeof gasPrice === "number" ? gasPrice : parseFloat(gasPrice);
-          if (!isNaN(price)) {
-            gasPriceCache = price;
-            gasPriceCacheTime = now;
-            return price;
+  // In the browser we skip Firestore to avoid permission errors; use localStorage only
+  if (typeof window === "undefined") {
+    try {
+      if (db) {
+        const SETTINGS_DOC_ID = "app_settings";
+        const GAS_PRICE_FIELD = "currentGasPrice";
+        const settingsRef = doc(db, "settings", SETTINGS_DOC_ID);
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const gasPrice = settingsSnap.data()[GAS_PRICE_FIELD];
+          if (gasPrice !== undefined && gasPrice !== null) {
+            const price = typeof gasPrice === "number" ? gasPrice : parseFloat(String(gasPrice));
+            if (!isNaN(price)) {
+              gasPriceCache = price;
+              gasPriceCacheTime = now;
+              return price;
+            }
           }
         }
       }
+    } catch {
+      // use fallbacks below
     }
-  } catch (error) {
-    console.warn("Error loading gas price from Firestore:", error);
   }
 
-  // Fallback to localStorage
+  // Fallback to localStorage (browser)
   if (typeof window !== "undefined") {
     try {
       const savedGasPrice = localStorage.getItem("current_gas_price");

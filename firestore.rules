@@ -2,7 +2,19 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // Tariff (fare matrix): allow read so fare calculation works even if client auth not yet ready
+    match /tariff/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Settings: allow read for gas price / app settings
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Trips collection: authenticated users can create and manage their own trips
     match /trips/{tripId} {
       // Allow create: user must be signed in and set userId to their own uid

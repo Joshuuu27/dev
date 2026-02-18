@@ -62,7 +62,7 @@ export default function SignupPage() {
           <span className="text-lg font-bold text-slate-900">FairFare</span>
         </Link>
 
-        <div className="w-full max-w-[400px] animate-card-enter">
+        <div className="w-full max-w-[520px] animate-card-enter">
           <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200/60 p-7 sm:p-8">
             <h1 className="text-2xl font-bold text-slate-900">Create account</h1>
             <p className="mt-1.5 text-sm text-slate-500">Join us and start your journey today</p>

@@ -127,12 +127,12 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleRegister} className="space-y-6">
       {/* User Role */}
-      <div className="space-y-2">
-        <Label htmlFor="role" className="text-sm font-medium text-slate-700">
+      <div className="space-y-1.5">
+        <Label htmlFor="role" className="text-xs font-medium text-slate-700">
           User Role
         </Label>
         <Select value={role} onValueChange={setRole}>
-          <SelectTrigger id="role" className="h-10 bg-slate-50/80 border-slate-200 focus:ring-indigo-500/20">
+          <SelectTrigger id="role" className="h-9 text-sm bg-slate-50/80 border-slate-200 focus:ring-indigo-500/20">
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
@@ -233,29 +233,23 @@ export function RegisterForm() {
       </div>
 
       {/* Terms and Conditions */}
-      <div className="flex items-start space-x-2">
+      <div className="flex items-start gap-2">
         <input
           id="terms"
           type="checkbox"
-          className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500 mt-0.5"
+          className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500 mt-0.5 shrink-0"
           required
         />
         <Label
           htmlFor="terms"
-          className="text-sm text-slate-600 leading-relaxed"
+          className="text-sm text-slate-600 leading-relaxed min-w-0"
         >
           I agree to the{" "}
-          <a
-            href="/terms"
-            className="text-indigo-600 hover:text-indigo-700 transition-colors"
-          >
+          <a href="/terms" className="text-indigo-600 hover:text-indigo-700 transition-colors whitespace-nowrap">
             Terms of Service
-          </a>{" "}
-          and{" "}
-          <a
-            href="/privacy"
-            className="text-indigo-600 hover:text-indigo-700 transition-colors"
-          >
+          </a>
+          {" "}and{" "}
+          <a href="/privacy" className="text-indigo-600 hover:text-indigo-700 transition-colors whitespace-nowrap">
             Privacy Policy
           </a>
         </Label>

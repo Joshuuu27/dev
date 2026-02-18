@@ -12,7 +12,7 @@ import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
 import { signInWithFacebook, signInWithGoogle } from "@/lib/firebase-auth";
-import { createSession } from "@/actions/auth-actions";
+
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, ] = useState(false);
@@ -52,16 +52,20 @@ export default function LoginForm() {
 
     const { uid, idToken } = userUid;
 
-    await fetch("/api/auth/login", {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ uid, idToken }),
     });
 
-    await createSession(uid);
+    if (!res.ok) {
+      console.error("Login API error", await res.text());
+      return;
+    }
 
     router.refresh();
+    window.location.href = "/user";
   };
 
   const handleFacebookLogin = async () => {
@@ -70,15 +74,20 @@ export default function LoginForm() {
     if (!result) return;
     const { uid, idToken } = result;
 
-    await fetch("/api/auth/login", {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ uid, idToken }),
     });
 
-    await createSession(uid);
+    if (!res.ok) {
+      console.error("Login API error", await res.text());
+      return;
+    }
+
     router.refresh();
+    window.location.href = "/user";
   };
 
   return (
