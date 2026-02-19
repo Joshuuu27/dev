@@ -1,19 +1,21 @@
 
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { lookupTariffFare, getDefaultFare } from "@/lib/tariff-utils";
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const BASEFARE = parseFloat(process.env.NEXT_PUBLIC_BASEFARE || '15');
 const PERKM = parseFloat(process.env.NEXT_PUBLIC_PERKM || '10');
-function loadGoogleMapsScript(apiKey: string) {
+
+function loadGoogleMapsScript(apiKey: string, onAuthFailure?: () => void) {
   if (typeof window === "undefined" || document.getElementById("google-maps-script")) return;
+  (window as any).gm_authFailure = () => onAuthFailure?.();
   const script = document.createElement("script");
   script.id = "google-maps-script";
-  // include geometry library for distance calculations
   script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
   script.async = true;
+  script.onerror = () => onAuthFailure?.();
   document.body.appendChild(script);
 }
 
@@ -28,7 +30,25 @@ interface MapComponentProps {
   startTracking?: boolean;
 }
 
+const GoogleMapErrorPanel = () => (
+  <div className="flex-1 flex items-center justify-center bg-slate-100 rounded-xl border border-slate-200 min-h-[400px]" style={{ minHeight: 400 }}>
+    <div className="text-center px-6 py-8 max-w-md">
+      <p className="font-semibold text-slate-800 mb-2">Google Maps couldn’t load</p>
+      <p className="text-sm text-slate-600 mb-4">Do these in order (then hard-refresh the page):</p>
+      <ol className="text-sm text-slate-600 text-left list-decimal list-inside space-y-2 mb-4">
+        <li><strong>HTTP referrers</strong> — Google Cloud Console → APIs &amp; Services → Credentials → your API key → Application restrictions: &quot;HTTP referrers&quot;. Add <em>both</em>: <code className="block mt-1 bg-slate-200 px-1 rounded text-xs break-all">https://YOUR-DOMAIN.com/*</code> and <code className="block mt-1 bg-slate-200 px-1 rounded text-xs break-all">https://YOUR-DOMAIN.com/</code> (use your real domain, e.g. fairfaree.vercel.app). Save.</li>
+        <li><strong>Billing</strong> — Enable billing for the project (required even for free tier). You get $200/month free; set a $0 budget alert if you want.</li>
+        <li><strong>APIs</strong> — In &quot;APIs &amp; Services&quot; → Library, enable: Maps JavaScript API, Places API, Geocoding API.</li>
+        <li><strong>Redeploy</strong> — If you added or changed <code className="bg-slate-200 px-1 rounded text-xs">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in Vercel, trigger a new deploy so the key is baked in.</li>
+      </ol>
+      <p className="text-xs text-slate-500 mb-2">Check the browser console (F12) for the exact error (e.g. RefererNotAllowedMapError or ApiNotActivatedMapError).</p>
+      <p className="text-xs text-slate-500">If you opened the app from your home screen (PWA), open the same URL in the browser (Chrome/Safari) and add that URL as a referrer; or add both <code className="bg-slate-200 px-1 rounded">https://your-domain.com/*</code> and <code className="bg-slate-200 px-1 rounded">https://your-domain.com/</code>.</p>
+    </div>
+  </div>
+);
+
 export default function MapComponent({ startingPoint, destination, startCoords, destCoords, onFareChange, onFareCalculating, onMapClick, startTracking }: MapComponentProps) {
+  const [mapAuthError, setMapAuthError] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const directionsRenderer = useRef<any>(null);
@@ -166,17 +186,22 @@ export default function MapComponent({ startingPoint, destination, startCoords, 
 
   useEffect(() => {
     if (!GOOGLE_MAPS_API_KEY) return;
-    loadGoogleMapsScript(GOOGLE_MAPS_API_KEY);
+    loadGoogleMapsScript(GOOGLE_MAPS_API_KEY, () => setMapAuthError(true));
 
     function initMap() {
       if (!((window as any).google && mapRef.current)) return;
 
       const defaultCenter = { lat: 14.5995, lng: 120.9842 };
 
-      mapInstance.current = new (window as any).google.maps.Map(mapRef.current, {
-        center: defaultCenter,
-        zoom: 17,
-      });
+      try {
+        mapInstance.current = new (window as any).google.maps.Map(mapRef.current, {
+          center: defaultCenter,
+          zoom: 17,
+        });
+      } catch (e) {
+        setMapAuthError(true);
+        return;
+      }
 
       directionsRenderer.current = new (window as any).google.maps.DirectionsRenderer();
       directionsRenderer.current.setMap(mapInstance.current);
@@ -606,11 +631,15 @@ export default function MapComponent({ startingPoint, destination, startCoords, 
         <div className="text-center px-6 py-8 max-w-md">
           <p className="font-semibold text-slate-800 mb-1">Map not available</p>
           <p className="text-sm text-slate-600">
-            Google Maps is not configured for this site. Add <code className="bg-slate-200 px-1 rounded text-xs">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in your deployment environment (e.g. Vercel) and allow this domain in Google Cloud Console → API key → HTTP referrers.
+            Add <code className="bg-slate-200 px-1 rounded text-xs">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in Vercel → Settings → Environment Variables, then redeploy.
           </p>
         </div>
       </div>
     );
+  }
+
+  if (mapAuthError) {
+    return <GoogleMapErrorPanel />;
   }
 
   return (
