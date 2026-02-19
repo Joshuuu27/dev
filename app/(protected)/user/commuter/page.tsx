@@ -438,7 +438,7 @@ export default function Home() {
   ])
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full bg-background relative overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-[100dvh] h-[100dvh] md:h-screen w-full max-w-[100vw] bg-background relative overflow-hidden">
       {/* Left Panel - Hidden on mobile, visible on desktop */}
       <div className="hidden md:block">
         <NavigationPanel
@@ -458,8 +458,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Right Panel - Map - z-0 and isolate ensure map stays below navigation panel overlays */}
-      <div className="flex-1 relative z-0 isolate w-full h-full md:h-auto min-h-0">
+      {/* Right Panel - Map - on mobile add padding-bottom so map is visible above the bottom sheet */}
+      <div className="flex-1 relative z-0 isolate w-full min-h-0 md:h-auto md:min-h-full pb-80 md:pb-0">
         <MapComponent
           startingPoint={startingPoint}
           destination={destination}
@@ -472,8 +472,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Mobile Panel - Bottom sheet - z-[9999] ensures it stays above Google Maps overlays */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border shadow-lg max-h-[70vh] overflow-y-auto">
+      {/* Mobile Panel - Bottom sheet with safe-area so it fits above home indicator */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border shadow-lg max-h-[70vh] overflow-y-auto pwa-bottom-safe pwa-mobile-sheet">
         <NavigationPanel
           destination={destination}
           setDestination={setDestination}

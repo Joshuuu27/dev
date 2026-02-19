@@ -152,7 +152,32 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    /* PWA / mobile: avoid content under notch and home indicator */
+    padding-top: env(safe-area-inset-top, 0px);
   }
+}
+
+/* PWA safe areas: use env(safe-area-inset-*) so content fits on notched devices */
+.safe-area-pwa {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.safe-area-pwa body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+/* Bottom fixed elements should add safe-area-inset-bottom so they sit above home indicator */
+.pwa-bottom-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
+/* Mobile bottom sheet: full width with safe-area horizontal padding */
+.pwa-mobile-sheet {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }

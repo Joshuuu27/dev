@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ToastContainer, Slide } from "react-toastify";
 
@@ -32,7 +32,14 @@ export const metadata: Metadata = {
     icon: "/icons/icon-512x512.png",
     apple: "/icons/icon-512x512.png",
   },
-  // themeColor: "#ffffff",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default async function RootLayout({
@@ -43,9 +50,9 @@ export default async function RootLayout({
   // const session = cookies().get(SESSION_COOKIE_NAME)?.value || null;
 
   return (
-    <html lang="en">
+    <html lang="en" className="safe-area-pwa">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-[100dvh] safe-area-pwa`}
       >
         <ClientLayout>{children}</ClientLayout>
       </body>
