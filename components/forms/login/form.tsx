@@ -22,15 +22,40 @@ const roleToPath: Record<string, string> = {
   operator: "/operator",
 };
 
+function getLoginErrorMessage(err: unknown): string {
+  const code = err && typeof err === "object" && "code" in err ? (err as { code?: string }).code : null;
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/invalid-login-credentials":
+      return "Wrong email or password. Please try again.";
+    case "auth/user-not-found":
+      return "No account found with this email.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/too-many-requests":
+      return "Too many failed attempts. Try again later or reset your password.";
+    case "auth/user-disabled":
+      return "This account has been disabled.";
+    default:
+      if (err instanceof Error) return err.message;
+      return "Login failed. Please check your email and password.";
+  }
+}
+
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const clearError = () => setError(null);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     setIsLoading(true);
     try {
       const credential = await signInWithEmailAndPassword(
@@ -56,7 +81,9 @@ export default function LoginForm() {
       const path = roleToPath[data.role] ?? "/user";
       window.location.href = path;
       return;
-    } catch {
+    } catch (err) {
+      setError(getLoginErrorMessage(err));
+    } finally {
       setIsLoading(false);
     }
   }
@@ -125,6 +152,15 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleLogin} className="space-y-4">
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"
+        >
+          <span className="shrink-0 w-4 h-4 rounded-full bg-red-200 flex items-center justify-center text-red-600 font-bold text-xs">!</span>
+          <span>{error}</span>
+        </div>
+      )}
       {/* Email Field */}
       <div className="space-y-1.5">
         <Label htmlFor="email" className="text-xs sm:text-sm font-medium text-slate-700">
@@ -139,7 +175,7 @@ export default function LoginForm() {
             value={email}
             className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
             required
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); clearError(); }}
           />
         </div>
       </div>
@@ -163,7 +199,7 @@ export default function LoginForm() {
             value={password}
             className="pl-10 pr-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
             required
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); clearError(); }}
           />
           <button
             type="button"

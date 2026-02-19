@@ -600,6 +600,19 @@ export default function MapComponent({ startingPoint, destination, startCoords, 
       });
   }, [startingPoint, destination, startCoords, destCoords, onFareChange, onFareCalculating]);
 
+  if (!GOOGLE_MAPS_API_KEY) {
+    return (
+      <div className="flex-1 relative overflow-hidden w-full h-full flex items-center justify-center bg-slate-100 rounded-xl border border-slate-200" style={{ minHeight: 400 }}>
+        <div className="text-center px-6 py-8 max-w-md">
+          <p className="font-semibold text-slate-800 mb-1">Map not available</p>
+          <p className="text-sm text-slate-600">
+            Google Maps is not configured for this site. Add <code className="bg-slate-200 px-1 rounded text-xs">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in your deployment environment (e.g. Vercel) and allow this domain in Google Cloud Console → API key → HTTP referrers.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 relative overflow-hidden w-full h-full">
       <div ref={mapRef} className="absolute inset-0 w-full h-full" style={{ minHeight: 400 }} />

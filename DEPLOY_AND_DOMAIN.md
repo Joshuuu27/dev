@@ -137,3 +137,41 @@ If you want to redo everything:
 5. **Parts 5–8** – Add domain in Vercel, set DNS at registrar, then set **NEXT_PUBLIC_API_URL** to your domain and Redeploy.
 
 After that, your updated code runs on your custom domain.
+
+---
+
+## Map not working on deployed domain (works on localhost)
+
+The map works on localhost but often fails on your live URL for two reasons.
+
+### 1. Environment variable not set in production
+
+The map needs `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in the browser. In Vercel it is not read from your local `.env` unless you add it there.
+
+**Fix:**
+
+1. Vercel → your project → **Settings** → **Environment Variables**.
+2. Add **Key:** `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, **Value:** your Google Maps API key (same as in `.env`).
+3. Optional: add `NEXT_PUBLIC_BASEFARE` and `NEXT_PUBLIC_PERKM` if you use custom values.
+4. **Redeploy:** Deployments → … on latest deployment → **Redeploy**.
+
+Without this, the key is undefined in production and the map will not load.
+
+### 2. Google Cloud API key restricted to localhost
+
+If your key is restricted by **HTTP referrer**, it may only allow `http://localhost:*`. Requests from your deployed domain are then blocked by Google.
+
+**Fix:**
+
+1. Open [Google Cloud Console](https://console.cloud.google.com) → your project.
+2. Go to **APIs & Services** → **Credentials**.
+3. Click your **Maps API key**.
+4. Under **Application restrictions**, choose **HTTP referrers**.
+5. Under **Website restrictions**, add your deployed URLs, for example:
+   - `https://fairfaree.vercel.app/*`
+   - `https://*.vercel.app/*`
+   - `https://yourdomain.com/*` (and `https://www.yourdomain.com/*` if you use a custom domain)
+6. Ensure **Maps JavaScript API** (and **Places API**, **Geocoding API** if used) are enabled under **APIs & Services** → **Library**.
+7. Save. Changes can take a few minutes to apply.
+
+After both steps, the map should work on your deployed domain.
