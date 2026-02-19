@@ -133,9 +133,9 @@ export function DataTable<TData>({
 
   return (
     <>
-      {/* Table Controls */}
+      {/* Table Controls - stack on mobile to prevent Filter dropdown overlapping Customize Columns */}
       {(showColumnFilter || showColumnToggle) && (
-        <div className="flex items-center pb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 pb-2">
           {showColumnFilter && (
             <DataTableFilter table={table} columns={filterColumns} />
           )}
@@ -146,7 +146,7 @@ export function DataTable<TData>({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 ml-auto text-sm"
+                  className="h-8 w-full sm:w-auto sm:ml-auto text-sm"
                 >
                   <Columns2 className="mr-2 h-4 w-4" />
                   Customize Columns
