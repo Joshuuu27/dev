@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { firebaseAdmin } from "@/lib/firebase.admin";
+import { firebaseAdmin, db } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
 
 export async function POST(req: Request) {
@@ -14,16 +14,18 @@ export async function POST(req: Request) {
     }
 
     const token = cookie.split("=")[1];
+    const decoded = await firebaseAdmin.auth().verifySessionCookie(token, true);
+    let role = decoded.role;
 
-    const decoded = await firebaseAdmin
-      .auth()
-      .verifySessionCookie(token, true);
+    if (role == null && decoded.uid) {
+      const userDoc = await db.collection("users").doc(decoded.uid).get();
+      role = userDoc.exists ? (userDoc.data()?.role ?? "user") : "user";
+    }
 
     return NextResponse.json({
       valid: true,
-      role: decoded.role,
+      role: role ?? "user",
     });
-
   } catch (err) {
     return NextResponse.json({ valid: false });
   }

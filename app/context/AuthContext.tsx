@@ -54,27 +54,27 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     "user" | "driver" | "admin" | "franchising" | "police" | "police_head" | "cttmo" | "operator" | null
   >(null);
 
-  // Listen for changes in the user's sign-in state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
       if (currentUser) {
-        const tokenResult: IdTokenResult =
-          await currentUser.getIdTokenResult(true);
-
-        const userRole = tokenResult.claims.role as
-          | "admin"
-          | "driver"
-          | "user"
-          | "franchising"
-          | "police"
-          | "police_head"
-          | "cttmo"
-          | "operator"
-          | undefined;
-        console.log("User role from token claims:", userRole);
-        setRole(userRole ?? "user");
+        try {
+          const tokenResult = await currentUser.getIdTokenResult(false);
+          const userRole = tokenResult.claims.role as
+            | "admin"
+            | "driver"
+            | "user"
+            | "franchising"
+            | "police"
+            | "police_head"
+            | "cttmo"
+            | "operator"
+            | undefined;
+          setRole(userRole ?? "user");
+        } catch {
+          setRole("user");
+        }
       }
 
       setLoading(false);

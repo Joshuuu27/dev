@@ -9,85 +9,118 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { useRouter } from "next/navigation";
-
 import { signInWithFacebook, signInWithGoogle } from "@/lib/firebase-auth";
+
+const roleToPath: Record<string, string> = {
+  admin: "/admin",
+  driver: "/driver",
+  franchising: "/franchising",
+  user: "/user",
+  police: "/police",
+  police_head: "/police",
+  cttmo: "/cttmo",
+  operator: "/operator",
+};
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, ] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setIsLoading(true);
+    try {
+      const credential = await signInWithEmailAndPassword(
+        getAuth(),
+        email,
+        password
+      );
+      const idToken = await credential.user.getIdToken();
 
-    // const res = await authService.login({ email, password });
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken }),
+      });
 
-    const credential = await signInWithEmailAndPassword(
-      getAuth(),
-      email,
-      password
-    );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Login failed");
+      }
 
-    const idToken = await credential.user.getIdToken();
-
-    await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ idToken }),
-    });
-
-    // Refresh page after updating browser cookies
-    router.refresh();
+      const data = await res.json();
+      const path = roleToPath[data.role] ?? "/user";
+      window.location.href = path;
+      return;
+    } catch {
+      setIsLoading(false);
+    }
   }
 
   const handleSignIn = async () => {
-    const userUid = await signInWithGoogle();
+    setIsLoading(true);
+    try {
+      const userUid = await signInWithGoogle();
+      if (!userUid) {
+        setIsLoading(false);
+        return;
+      }
+      const { idToken } = userUid;
 
-    if (!userUid) return;
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken }),
+      });
 
-    const { uid, idToken } = userUid;
+      if (!res.ok) {
+        console.error("Login API error", await res.text());
+        setIsLoading(false);
+        return;
+      }
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ uid, idToken }),
-    });
-
-    if (!res.ok) {
-      console.error("Login API error", await res.text());
-      return;
+      const data = await res.json();
+      const path = roleToPath[data.role] ?? "/user";
+      window.location.href = path;
+    } catch {
+      setIsLoading(false);
     }
-
-    router.refresh();
-    window.location.href = "/user";
   };
 
   const handleFacebookLogin = async () => {
-    const result = await signInWithFacebook();
+    setIsLoading(true);
+    try {
+      const result = await signInWithFacebook();
+      if (!result) {
+        setIsLoading(false);
+        return;
+      }
+      const { idToken } = result;
 
-    if (!result) return;
-    const { uid, idToken } = result;
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ idToken }),
+      });
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ uid, idToken }),
-    });
+      if (!res.ok) {
+        console.error("Login API error", await res.text());
+        setIsLoading(false);
+        return;
+      }
 
-    if (!res.ok) {
-      console.error("Login API error", await res.text());
-      return;
+      const data = await res.json();
+      const path = roleToPath[data.role] ?? "/user";
+      window.location.href = path;
+    } catch {
+      setIsLoading(false);
     }
-
-    router.refresh();
-    window.location.href = "/user";
   };
 
   return (
@@ -168,6 +201,7 @@ export default function LoginForm() {
         <Button
           onClick={handleSignIn}
           type="button"
+          disabled={isLoading}
           variant="outline"
           className="h-11 text-sm rounded-xl border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700 transition-colors"
         >
@@ -193,6 +227,7 @@ export default function LoginForm() {
         </Button>
         <Button
           type="button"
+          disabled={isLoading}
           variant="outline"
           onClick={handleFacebookLogin}
           className="h-11 text-sm rounded-xl border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700 transition-colors"
