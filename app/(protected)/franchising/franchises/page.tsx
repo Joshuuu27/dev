@@ -251,7 +251,7 @@ const FranchisesPage = () => {
       <Header />
 
       {/* Content */}
-      <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 px-6 py-8">
+      <main className="min-h-screen bg-[#F8F8FA] px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

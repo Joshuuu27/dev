@@ -27,7 +27,7 @@ export default function SignupPage() {
           <h2 className="text-3xl xl:text-4xl font-bold leading-tight max-w-sm">
             Fair fare.
             <br />
-            <span className="text-indigo-300">Every ride.</span>
+            <span className="text-[#A78BFA]">Every ride.</span>
           </h2>
           <p className="mt-4 text-slate-300 text-sm xl:text-base max-w-xs">
             Know your fare before you ride. Transparent, distance-based pricing for City of Mati.
@@ -35,13 +35,13 @@ export default function SignupPage() {
           <div className="mt-10 flex flex-wrap gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-indigo-300" />
+                <MapPin className="w-5 h-5 text-[#A78BFA]" />
               </div>
               <span className="text-sm text-slate-400">Track your ride</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-indigo-300" />
+                <Shield className="w-5 h-5 text-[#A78BFA]" />
               </div>
               <span className="text-sm text-slate-400">Secure sign-in</span>
             </div>
@@ -53,8 +53,8 @@ export default function SignupPage() {
         </footer>
       </aside>
 
-      {/* Right: Form panel */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-10 lg:py-8 bg-slate-50">
+      {/* Right: Form panel - same as login */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-10 lg:py-8 bg-[#F8F8FA] min-h-screen">
         <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-8 animate-logo-float">
           <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
             <Car className="w-5 h-5 text-white" />
@@ -63,9 +63,9 @@ export default function SignupPage() {
         </Link>
 
         <div className="w-full max-w-[520px] animate-card-enter">
-          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200/60 p-7 sm:p-8">
+          <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100 p-7 sm:p-8">
             <h1 className="text-2xl font-bold text-slate-900">Create account</h1>
-            <p className="mt-1.5 text-sm text-slate-500">Join us and start your journey today</p>
+            <p className="mt-1.5 text-sm text-slate-600">Join us and start your journey today</p>
 
             <div className="mt-6">
               <RegisterForm />
@@ -73,17 +73,17 @@ export default function SignupPage() {
 
             <p className="mt-6 text-center text-sm text-slate-600">
               Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+              <Link href="/login" className="font-semibold text-[#6B46C1] hover:text-[#5A3AA3] transition-colors">
                 Sign in
               </Link>
             </p>
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-6 text-center text-xs text-slate-500">
             By creating an account, you agree to our{" "}
-            <Link href="/terms" className="text-slate-500 hover:text-slate-700 underline">Terms</Link>
+            <Link href="/terms" className="text-[#6B46C1] hover:text-[#5A3AA3] underline">Terms</Link>
             {" "}and{" "}
-            <Link href="/privacy" className="text-slate-500 hover:text-slate-700 underline">Privacy Policy</Link>.
+            <Link href="/privacy" className="text-[#6B46C1] hover:text-[#5A3AA3] underline">Privacy Policy</Link>.
           </p>
         </div>
       </main>

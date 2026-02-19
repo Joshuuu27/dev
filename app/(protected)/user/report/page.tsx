@@ -4,11 +4,10 @@ import React, { useState, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/common/data-table/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Image as ImageIcon, Trash2, MoreHorizontal } from "lucide-react";
+import { Image as ImageIcon, Trash2, MoreHorizontal } from "lucide-react";
 import { ReportCase, getCommuterReportHistoryViaAPI, deleteReportViaAPI } from "@/lib/services/ReportService";
 import { useAuthContext } from "@/app/context/AuthContext";
 import { LoadingScreen } from "@/components/common/loading-component";
-import { ReportDialogComponent } from "@/components/commuter/report-dialog";
 import { getDriverVehicles } from "@/lib/services/VehicleService";
 import { toast } from "react-toastify";
 import Header from "@/components/commuter/trip-history-header";
@@ -146,7 +145,6 @@ export default function ReportPage() {
   const { user } = useAuthContext();
   const [reports, setReports] = useState<ReportWithPlateNumber[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -178,7 +176,7 @@ export default function ReportPage() {
               if (vehiclesRes.length > 0) {
                 fetchedPlateNumber = vehiclesRes[0].plateNumber;
               } else {
-                fetchedPlateNumber = report.plateNumber || report.vehicleNumber || "";
+                fetchedPlateNumber = report.plateNumber || report.vehicleNumber || "No vehicle";
               }
               if (profileRes.ok) {
                 const profile = await profileRes.json();
@@ -204,12 +202,6 @@ export default function ReportPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleReportSubmitted = () => {
-    setOpenDialog(false);
-    toast.success("Report submitted successfully!");
-    fetchReports();
   };
 
   const handleViewImages = (imageUrls: string[]) => {
@@ -253,30 +245,12 @@ export default function ReportPage() {
     <>
       <Header />
       <div className="max-w-5xl mx-auto px-6 py-8 w-full">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Report History</h1>
-            <p className="text-gray-600 mt-2">
-              View and manage your reported cases
-            </p>
-          </div>
-          <Button
-            onClick={() => setOpenDialog(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Report
-          </Button>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Report History</h1>
+          <p className="text-gray-600 mt-2">
+            View and manage your reported cases
+          </p>
         </div>
-
-        {openDialog && (
-          <ReportDialogComponent
-            userId={user!.uid}
-            open={openDialog}
-            onOpenChange={setOpenDialog}
-            onReportSubmitted={handleReportSubmitted}
-          />
-        )}
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <DataTable

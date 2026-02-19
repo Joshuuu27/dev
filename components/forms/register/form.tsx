@@ -132,7 +132,7 @@ export function RegisterForm() {
           User Role
         </Label>
         <Select value={role} onValueChange={setRole}>
-          <SelectTrigger id="role" className="h-9 text-sm bg-slate-50/80 border-slate-200 focus:ring-indigo-500/20">
+          <SelectTrigger id="role" className="h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors">
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
@@ -156,7 +156,7 @@ export function RegisterForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your full name"
-              className="pl-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
               required
             />
           </div>
@@ -173,7 +173,7 @@ export function RegisterForm() {
               value={email}
               placeholder="Enter your email"
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
               required
             />
           </div>
@@ -194,7 +194,7 @@ export function RegisterForm() {
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
               placeholder="Create a password"
-              className="pl-10 pr-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              className="pl-10 pr-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
               required
             />
             <button
@@ -218,7 +218,7 @@ export function RegisterForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm your password"
-              className="pl-10 pr-10 h-10 text-sm bg-slate-50/80 border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-colors"
+              className="pl-10 pr-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
               required
             />
             <button
@@ -237,7 +237,7 @@ export function RegisterForm() {
         <input
           id="terms"
           type="checkbox"
-          className="w-4 h-4 text-indigo-600 bg-slate-100 border-slate-300 rounded focus:ring-indigo-500 mt-0.5 shrink-0"
+          className="w-4 h-4 text-[#6B46C1] bg-[#EDEEF9] border-slate-200 rounded focus:ring-[#6B46C1]/30 mt-0.5 shrink-0"
           required
         />
         <Label
@@ -245,11 +245,11 @@ export function RegisterForm() {
           className="text-sm text-slate-600 leading-relaxed min-w-0"
         >
           I agree to the{" "}
-          <a href="/terms" className="text-indigo-600 hover:text-indigo-700 transition-colors whitespace-nowrap">
+          <a href="/terms" className="text-[#6B46C1] hover:text-[#5A3AA3] transition-colors whitespace-nowrap">
             Terms of Service
           </a>
           {" "}and{" "}
-          <a href="/privacy" className="text-indigo-600 hover:text-indigo-700 transition-colors whitespace-nowrap">
+          <a href="/privacy" className="text-[#6B46C1] hover:text-[#5A3AA3] transition-colors whitespace-nowrap">
             Privacy Policy
           </a>
         </Label>
@@ -259,7 +259,7 @@ export function RegisterForm() {
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-10 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors"
+        className="w-full h-11 text-sm bg-[#6B46C1] hover:bg-[#5A3AA3] text-white font-semibold rounded-xl transition-colors shadow-sm"
       >
         {isLoading ? "Creating account..." : "Create Account"}
       </Button>

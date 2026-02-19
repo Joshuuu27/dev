@@ -46,7 +46,7 @@ export default function LoginPage() {
           <h2 className="text-3xl xl:text-4xl font-bold leading-tight max-w-sm">
             Fair fare.
             <br />
-            <span className="text-indigo-300">Every ride.</span>
+            <span className="text-[#A78BFA]">Every ride.</span>
           </h2>
           <p className="mt-4 text-slate-300 text-sm xl:text-base max-w-xs">
             Know your fare before you ride. Transparent, distance-based pricing for City of Mati.
@@ -54,13 +54,13 @@ export default function LoginPage() {
           <div className="mt-10 flex flex-wrap gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-indigo-300" />
+                <MapPin className="w-5 h-5 text-[#A78BFA]" />
               </div>
               <span className="text-sm text-slate-400">Track your ride</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-indigo-300" />
+                <Shield className="w-5 h-5 text-[#A78BFA]" />
               </div>
               <span className="text-sm text-slate-400">Secure sign-in</span>
             </div>

@@ -106,8 +106,7 @@ export default function ReportHistoryPage() {
               if (vehicles.length > 0) {
                 fetchedPlateNumber = vehicles[0].plateNumber;
               } else {
-                // If no vehicles found, use stored plateNumber or vehicleNumber as fallback
-                fetchedPlateNumber = report.plateNumber || report.vehicleNumber || "";
+                fetchedPlateNumber = report.plateNumber || report.vehicleNumber || "No vehicle";
               }
             } catch (error) {
               console.error(`Error fetching vehicle for driver ${report.driverId}:`, error);

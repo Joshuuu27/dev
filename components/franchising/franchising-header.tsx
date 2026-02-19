@@ -21,17 +21,15 @@ export default function Header() {
   ];
 
   return (
-    <header className="border-b border-border bg-card top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">
-                T
-              </span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800 group-hover:bg-slate-700 transition-colors">
+              <span className="text-sm font-bold text-white">T</span>
             </div>
-            <h1 className="text-xl font-bold text-foreground">Tri-Fare</h1>
-          </div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tri-Fare</h1>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
@@ -39,7 +37,7 @@ export default function Header() {
               <Link key={link.href} href={link.href}>
                 <Button
                   variant="ghost"
-                  className="text-foreground hover:bg-muted"
+                  className="text-sm font-medium text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9] rounded-xl transition-colors px-3 py-2"
                 >
                   {link.label}
                 </Button>
@@ -47,8 +45,8 @@ export default function Header() {
             ))}
             {/* Logout Button */}
             <Button
-              variant="destructive"
-              className="ml-2 flex items-center gap-2"
+              variant="outline"
+              className="ml-2 flex items-center gap-2 border-slate-200 rounded-xl"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
@@ -60,7 +58,7 @@ export default function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-foreground hover:bg-muted"
+            className="lg:hidden p-2 rounded-xl hover:bg-slate-100 text-slate-600"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
@@ -82,7 +80,7 @@ export default function Header() {
               >
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-foreground hover:bg-muted"
+                  className="w-full justify-start text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9] rounded-xl py-2.5"
                 >
                   {link.label}
                 </Button>
@@ -90,8 +88,8 @@ export default function Header() {
             ))}
             {/* Mobile Logout */}
             <Button
-              variant="destructive"
-              className="w-full justify-start mt-2 flex items-center gap-2"
+              variant="outline"
+              className="w-full justify-start mt-2 flex items-center gap-2 border-slate-200 rounded-xl"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />

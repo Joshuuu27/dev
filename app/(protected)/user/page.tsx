@@ -26,7 +26,7 @@ const UserDashboard = () => {
 
               <div className="relative z-10 space-y-6">
                 <div className="space-y-2">
-                  <p className="text-sm md:text-base font-medium tracking-widest uppercase text-indigo-200">
+                  <p className="text-sm md:text-base font-medium tracking-widest uppercase text-[#C4B5FD]">
                     Mabuhay ug Madayaw
                   </p>
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
@@ -55,7 +55,7 @@ const UserDashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                   <div className="flex items-center gap-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 px-4 py-3">
                     <div className="w-10 h-10 rounded-lg bg-[#EDEEF9]/20 flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-indigo-300" />
+                      <MapPin className="w-5 h-5 text-[#A78BFA]" />
                     </div>
                     <span className="text-sm font-medium text-slate-200">Real-time Tracking</span>
                   </div>

@@ -74,7 +74,7 @@ export function DataTableFilter<TData>({
     <div className="flex items-center space-x-0 relative">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="rounded-r-none cursor-pointer h-8" variant="default">
+          <Button className="rounded-r-none rounded-l-xl cursor-pointer h-8" variant="default">
             Filter <ChevronDown className="ml-1 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

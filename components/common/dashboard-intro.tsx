@@ -58,7 +58,7 @@ export function DashboardIntro({
 
         <div className="relative z-10 space-y-6">
           <div className="space-y-2">
-            <p className="text-sm md:text-base font-medium tracking-widest uppercase text-indigo-200">
+            <p className="text-sm md:text-base font-medium tracking-widest uppercase text-[#C4B5FD]">
               Mabuhay ug Madayaw
             </p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
