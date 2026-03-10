@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, ChevronRight } from 'lucide-react';
+import { SearchBar } from "@/components/common/SearchBar";
 import { Input } from '@/components/ui/input';
 import TripHistoryCard from '@/components/commuter/trip-history-card';
 import Header from '@/components/commuter/trip-history-header';
@@ -136,15 +137,12 @@ export default function HistoryPage() {
         {/* Search Section */}
         <section className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search trips by location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 h-11 bg-card border-input text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search trips by location..."
+              className="w-full max-w-sm"
+            />
           </div>
         </section>
 

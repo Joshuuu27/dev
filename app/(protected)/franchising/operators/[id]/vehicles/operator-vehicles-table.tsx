@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/common/data-table";
+import { SearchBar } from "@/components/common/SearchBar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,12 +12,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Users, RotateCcw, History } from "lucide-react";
+import { MoreHorizontal, Edit, Users, RotateCcw, History, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
-import EditVehicleModal from "./edit-vehicle-modal.tsx";
-import AssignDriverModal from "./assign-driver-modal.tsx";
-import RenewFranchiseModal from "./renew-franchise-modal.tsx";
-import RenewalHistoryModal from "./renewal-history-modal.tsx";
+import EditVehicleModal from "./edit-vehicle-modal";
+import AssignDriverModal from "./assign-driver-modal";
+import RenewFranchiseModal from "./renew-franchise-modal";
+import RenewalHistoryModal from "./renewal-history-modal";
 
 export interface RenewalEntry {
   renewalDate: string;
@@ -55,6 +56,26 @@ export default function OperatorVehiclesTable({
   const [isAssignDriverOpen, setIsAssignDriverOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
+
+  const filteredVehicles = useMemo(() => {
+    let list = vehicles;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((v) => {
+        const plate = String(v.plateNumber ?? "").toLowerCase();
+        const type = String(v.vehicleType ?? "").toLowerCase();
+        const driver = String(v.assignedDriverName ?? "").toLowerCase();
+        const franchise = String(v.franchiseNumber ?? "").toLowerCase();
+        return plate.includes(q) || type.includes(q) || driver.includes(q) || franchise.includes(q);
+      });
+    }
+    if (vehicleTypeFilter !== "all") {
+      list = list.filter((v) => String(v.vehicleType ?? "").toLowerCase() === vehicleTypeFilter.toLowerCase());
+    }
+    return list;
+  }, [vehicles, searchText, vehicleTypeFilter]);
 
   const columns: ColumnDef<Vehicle>[] = [
     {
@@ -221,7 +242,54 @@ export default function OperatorVehiclesTable({
 
   return (
     <>
-      <DataTable columns={columns} data={vehicles} />
+      <DataTable
+        columns={columns}
+        data={filteredVehicles}
+        showOrderNumbers={true}
+        rowsPerPage={10}
+        showPagination={true}
+        showColumnFilter={false}
+        showColumnToggle={true}
+        extraToolbarContent={
+          <>
+            <SearchBar
+              value={searchText}
+              onChange={setSearchText}
+              placeholder="Search plate, driver, vehicle type..."
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-sm">
+                  {vehicleTypeFilter === "all" ? "Vehicle Type" : `Type: ${vehicleTypeFilter}`}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[140px]">
+                <DropdownMenuItem onClick={() => setVehicleTypeFilter("all")} className="cursor-pointer">
+                  All types
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setVehicleTypeFilter("Baobao")} className="cursor-pointer">
+                  Baobao
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setVehicleTypeFilter("Tricycle")} className="cursor-pointer">
+                  Tricycle
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setVehicleTypeFilter("Other")} className="cursor-pointer">
+                  Other
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setVehicleTypeFilter("Others")} className="cursor-pointer">
+                  Others
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+        emptyMessage={
+          searchText.trim() || vehicleTypeFilter !== "all"
+            ? "No vehicles match your filters or search."
+            : "No vehicles found."
+        }
+      />
 
       {selectedVehicle && (
         <>

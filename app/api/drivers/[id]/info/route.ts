@@ -6,10 +6,10 @@ const driverCache = new Map<string, string>();
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const driverId = params.id;
+    const { id: driverId } = await params;
 
     if (!driverId) {
       return NextResponse.json(

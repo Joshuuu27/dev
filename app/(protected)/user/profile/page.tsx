@@ -9,7 +9,10 @@ import Header from "@/components/commuter/trip-history-header";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
-    name: "Juan Dela Cruz",
+    firstName: "Juan",
+    lastName: "Dela Cruz",
+    middleName: "",
+    suffix: "",
     email: "juan@example.com",
     phone: "+63 912 345 6789",
   });
@@ -23,15 +26,51 @@ export default function ProfilePage() {
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         <Card>
           <CardContent className="p-6 space-y-6">
-            <div>
-              <label className="text-sm font-medium">Full Name</label>
-              <Input
-                value={profile.name}
-                onChange={(e) =>
-                  setProfile({ ...profile, name: e.target.value })
-                }
-                className="mt-1"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">First Name</label>
+                <Input
+                  value={profile.firstName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, firstName: e.target.value })
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Last Name</label>
+                <Input
+                  value={profile.lastName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, lastName: e.target.value })
+                  }
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Middle Name <span className="text-muted-foreground">(optional)</span></label>
+                <Input
+                  value={profile.middleName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, middleName: e.target.value })
+                  }
+                  className="mt-1"
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Suffix <span className="text-muted-foreground">(e.g. Jr., Sr., III)</span></label>
+                <Input
+                  value={profile.suffix}
+                  onChange={(e) =>
+                    setProfile({ ...profile, suffix: e.target.value })
+                  }
+                  className="mt-1"
+                  placeholder="Optional"
+                />
+              </div>
             </div>
 
             <div>

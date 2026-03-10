@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db, firebaseAdmin } from "@/lib/firebase.admin";
 
 export async function GET(
@@ -14,7 +15,7 @@ export async function GET(
       .where("operatorId", "==", operatorId)
       .get();
 
-    const vehicles = snapshot.docs.map((doc) => {
+    const vehicles = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       
       // Add missing dateAdded and franchiseExpirationDate for legacy vehicles
@@ -48,7 +49,7 @@ export async function GET(
             dateAdded: dateAdded,
             franchiseExpirationDate: franchiseExpirationDate,
             renewalHistory: renewalHistory,
-          }).catch(err => console.error("Error updating vehicle:", err));
+          }).catch((err: unknown) => console.error("Error updating vehicle:", err));
         }
       }
       

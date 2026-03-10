@@ -13,6 +13,14 @@ export type User = {
   role: string;
 };
 
+export type Drivers = {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  [key: string]: unknown;
+};
+
 export const columns: ColumnDef<Drivers>[] = [
   {
     accessorKey: "name",

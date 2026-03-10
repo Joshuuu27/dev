@@ -17,6 +17,10 @@ import { Loader2 } from "lucide-react";
 interface Operator {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  suffix?: string;
   email: string;
   franchiseNumber?: string;
 }
@@ -35,7 +39,10 @@ export default function EditOperatorModal({
   onSuccess,
 }: EditOperatorModalProps) {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    suffix: "",
     email: "",
     franchiseNumber: "",
   });
@@ -44,9 +51,12 @@ export default function EditOperatorModal({
   useEffect(() => {
     if (operator && isOpen) {
       setFormData({
-        name: operator.name || "",
-        email: operator.email || "",
-        franchiseNumber: operator.franchiseNumber || "",
+        firstName: operator.firstName ?? "",
+        lastName: operator.lastName ?? (operator.name ?? ""),
+        middleName: operator.middleName ?? "",
+        suffix: operator.suffix ?? "",
+        email: operator.email ?? "",
+        franchiseNumber: operator.franchiseNumber ?? "",
       });
     }
   }, [operator, isOpen]);
@@ -62,8 +72,8 @@ export default function EditOperatorModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      toast.error("Please enter operator name");
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast.error("Please enter first name and last name");
       return;
     }
 
@@ -81,7 +91,10 @@ export default function EditOperatorModal({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: formData.name.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          middleName: formData.middleName.trim() || undefined,
+          suffix: formData.suffix.trim() || undefined,
           email: formData.email.trim(),
           franchiseNumber: formData.franchiseNumber.trim() || undefined,
         }),
@@ -111,18 +124,54 @@ export default function EditOperatorModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Operator Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter operator name"
-              disabled={loading}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First name"
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Last name"
+                disabled={loading}
+              />
+            </div>
           </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="middleName">Middle Name <span className="text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="middleName"
+                name="middleName"
+                value={formData.middleName}
+                onChange={handleChange}
+                placeholder="Middle name"
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="suffix">Suffix <span className="text-muted-foreground">(e.g. Jr., Sr., III)</span></Label>
+              <Input
+                id="suffix"
+                name="suffix"
+                value={formData.suffix}
+                onChange={handleChange}
+                placeholder="Optional"
+                disabled={loading}
+              />
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <Input

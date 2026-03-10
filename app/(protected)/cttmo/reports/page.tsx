@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/cttmo/cttmo-header";
 import { DataTable } from "@/components/common/data-table/DataTable";
-import { AlertTriangle } from "lucide-react";
+import { SearchBar } from "@/components/common/SearchBar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AlertTriangle, ChevronDown } from "lucide-react";
 import { LoadingScreen } from "@/components/common/loading-component";
 import { toast } from "react-toastify";
 import {
@@ -18,6 +26,28 @@ export default function CTTMOReportsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const filteredReports = useMemo(() => {
+    let list = reports;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((r) => {
+        const commuter = String(r.commuterName ?? "").toLowerCase();
+        const type = String(r.reportType ?? "").toLowerCase();
+        const plate = String(r.plateNumber ?? "").toLowerCase();
+        const desc = String(r.description ?? "").toLowerCase();
+        const location = String(r.location ?? "").toLowerCase();
+        const operator = String(r.operatorName ?? "").toLowerCase();
+        return commuter.includes(q) || type.includes(q) || plate.includes(q) || desc.includes(q) || location.includes(q) || operator.includes(q);
+      });
+    }
+    if (statusFilter !== "all") {
+      list = list.filter((r) => String(r.status ?? "").toLowerCase() === statusFilter.toLowerCase());
+    }
+    return list;
+  }, [reports, searchText, statusFilter]);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -85,11 +115,48 @@ export default function CTTMOReportsPage() {
             ) : (
               <DataTable
                 columns={columns}
-                data={reports}
+                data={filteredReports}
                 showOrderNumbers={true}
-                showColumnFilter={true}
+                rowsPerPage={10}
+                showPagination={true}
+                showColumnFilter={false}
                 showColumnToggle={true}
-                emptyMessage="No reports available"
+                extraToolbarContent={
+                  <>
+                    <SearchBar
+                      value={searchText}
+                      onChange={setSearchText}
+                      placeholder="Search commuter, report type, plate, location..."
+                    />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-sm">
+                          {statusFilter === "all" ? "Status" : `Status: ${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}`}
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[140px]">
+                        <DropdownMenuItem onClick={() => setStatusFilter("all")} className="cursor-pointer">
+                          All statuses
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setStatusFilter("pending")} className="cursor-pointer">
+                          Pending
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setStatusFilter("investigating")} className="cursor-pointer">
+                          Investigating
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setStatusFilter("resolved")} className="cursor-pointer">
+                          Resolved
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                }
+                emptyMessage={
+                  searchText.trim() || statusFilter !== "all"
+                    ? "No reports match your filters or search."
+                    : "No reports available"
+                }
               />
             )}
           </CardContent>

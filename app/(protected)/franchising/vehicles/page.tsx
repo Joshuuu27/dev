@@ -1,9 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/franchising/franchising-header";
 import { DataTable } from "@/components/common/data-table";
+import { SearchBar } from "@/components/common/SearchBar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   createVehicleColumns,
@@ -29,7 +38,29 @@ const VehiclesPage = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<OperatorVehicle | null>(
     null
   );
+  const [searchText, setSearchText] = useState("");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
   const hasFetched = useRef(false);
+
+  const filteredVehicles = useMemo(() => {
+    let list = vehicles;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((v) => {
+        const plate = String(v.plateNumber ?? "").toLowerCase();
+        const driver = String(v.assignedDriverName ?? "").toLowerCase();
+        const operator = String(v.operatorName ?? "").toLowerCase();
+        const body = String(v.bodyNumber ?? "").toLowerCase();
+        const franchise = String(v.franchiseNumber ?? "").toLowerCase();
+        const type = String(v.vehicleType ?? "").toLowerCase();
+        return plate.includes(q) || driver.includes(q) || operator.includes(q) || body.includes(q) || franchise.includes(q) || type.includes(q);
+      });
+    }
+    if (vehicleTypeFilter !== "all") {
+      list = list.filter((v) => String(v.vehicleType ?? "").toLowerCase() === vehicleTypeFilter.toLowerCase());
+    }
+    return list;
+  }, [vehicles, searchText, vehicleTypeFilter]);
 
   const fetchAllVehicles = useCallback(async () => {
     try {
@@ -154,12 +185,48 @@ const VehiclesPage = () => {
             ) : vehicles.length > 0 ? (
               <DataTable
                 columns={columns}
-                data={vehicles}
+                data={filteredVehicles}
                 showOrderNumbers={true}
                 rowsPerPage={10}
                 showPagination={true}
-                showColumnFilter={true}
+                showColumnFilter={false}
                 showColumnToggle={true}
+                extraToolbarContent={
+                  <>
+                    <SearchBar
+                      value={searchText}
+                      onChange={setSearchText}
+                      placeholder="Search plate, driver, operator, body #, franchise..."
+                    />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-sm">
+                          {vehicleTypeFilter === "all" ? "Vehicle Type" : `Type: ${vehicleTypeFilter}`}
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[140px]">
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("all")} className="cursor-pointer">
+                          All types
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Baobao")} className="cursor-pointer">
+                          Baobao
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Tricycle")} className="cursor-pointer">
+                          Tricycle
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Other")} className="cursor-pointer">
+                          Other
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                }
+                emptyMessage={
+                  searchText.trim() || vehicleTypeFilter !== "all"
+                    ? "No vehicles match your filters or search."
+                    : "No vehicles assigned yet."
+                }
               />
             ) : (
               <div className="text-center py-8 text-gray-500">

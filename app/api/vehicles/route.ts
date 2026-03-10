@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db, firebaseAdmin } from "@/lib/firebase.admin";
 
 export async function GET(req: Request) {
@@ -22,7 +23,7 @@ export async function GET(req: Request) {
     const snapshot = await query.get();
 
     const vehicles = await Promise.all(
-      snapshot.docs.map(async (doc) => {
+      snapshot.docs.map(async (doc: QueryDocumentSnapshot) => {
         const vehicleData = doc.data();
         let operatorName = "Unknown";
 
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
             dateAdded,
             franchiseExpirationDate,
             renewalHistory,
-          }).catch(err => console.error("Error updating vehicle:", err));
+          }).catch((err: unknown) => console.error("Error updating vehicle:", err));
         }
 
         console.log(`Vehicle ${vehicleData.plateNumber}:`, {

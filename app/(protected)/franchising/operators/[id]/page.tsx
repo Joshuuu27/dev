@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/common/data-table/DataTable";
+import { SearchBar } from "@/components/common/SearchBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Edit, Users, ArrowLeft, Trash2, MoreHorizontal, RotateCcw, History } from "lucide-react";
+import { Loader2, Plus, Edit, Users, ArrowLeft, Trash2, MoreHorizontal, RotateCcw, History, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
 import Header from "@/components/franchising/franchising-header";
 import { LoadingScreen } from "@/components/common/loading-component";
@@ -61,6 +62,27 @@ export default function OperatorDetailsPage() {
   const [isAddVehicleOpen, setIsAddVehicleOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
+
+  const filteredVehicles = useMemo(() => {
+    let list = vehicles;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((v) => {
+        const plate = String(v.plateNumber ?? "").toLowerCase();
+        const body = String(v.bodyNumber ?? "").toLowerCase();
+        const type = String(v.vehicleType ?? "").toLowerCase();
+        const driver = String(v.assignedDriverName ?? "").toLowerCase();
+        const franchise = String(v.franchiseNumber ?? "").toLowerCase();
+        return plate.includes(q) || body.includes(q) || type.includes(q) || driver.includes(q) || franchise.includes(q);
+      });
+    }
+    if (vehicleTypeFilter !== "all") {
+      list = list.filter((v) => String(v.vehicleType ?? "").toLowerCase() === vehicleTypeFilter.toLowerCase());
+    }
+    return list;
+  }, [vehicles, searchText, vehicleTypeFilter]);
 
   useEffect(() => {
     if (operatorId) {
@@ -354,12 +376,50 @@ export default function OperatorDetailsPage() {
           <CardContent>
             {vehicles.length > 0 ? (
               <DataTable
-                data={vehicles}
+                data={filteredVehicles}
                 columns={vehicleColumns}
                 showOrderNumbers={false}
-                showColumnFilter={true}
+                showColumnFilter={false}
                 showColumnToggle={true}
-                emptyMessage="No vehicles found"
+                extraToolbarContent={
+                  <>
+                    <SearchBar
+                      value={searchText}
+                      onChange={setSearchText}
+                      placeholder="Search plate, driver, vehicle type..."
+                    />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-sm">
+                          {vehicleTypeFilter === "all" ? "Vehicle Type" : `Type: ${vehicleTypeFilter}`}
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[140px]">
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("all")} className="cursor-pointer">
+                          All types
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Baobao")} className="cursor-pointer">
+                          Baobao
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Tricycle")} className="cursor-pointer">
+                          Tricycle
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Other")} className="cursor-pointer">
+                          Other
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVehicleTypeFilter("Others")} className="cursor-pointer">
+                          Others
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                }
+                emptyMessage={
+                  searchText.trim() || vehicleTypeFilter !== "all"
+                    ? "No vehicles match your filters or search."
+                    : "No vehicles found."
+                }
               />
             ) : (
               <div className="text-center py-8 text-gray-500">

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db, adminAuth } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
 
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
       .orderBy("timestamp", "desc")
       .get();
 
-    const alerts = snapshot.docs.map((doc) => {
+    const alerts = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -74,6 +75,44 @@ export async function DELETE(req: Request) {
     console.error("Error deleting SOS alert:", err);
     return NextResponse.json(
       { error: err?.message || "Failed to delete SOS alert" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: Request) {
+  const userId = await verifyUser(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const body = await req.json();
+    const { alertId, latitude, longitude } = body;
+    if (!alertId || latitude == null || longitude == null) {
+      return NextResponse.json(
+        { error: "alertId, latitude, and longitude are required" },
+        { status: 400 }
+      );
+    }
+    const alertRef = db.collection("sos_alerts").doc(alertId);
+    const alertDoc = await alertRef.get();
+    if (!alertDoc.exists) {
+      return NextResponse.json({ error: "Alert not found" }, { status: 404 });
+    }
+    const data = alertDoc.data();
+    if (data?.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await alertRef.update({
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+      updatedAt: new Date(),
+    });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error("Error updating SOS location:", err);
+    return NextResponse.json(
+      { error: err?.message || "Failed to update location" },
       { status: 500 }
     );
   }

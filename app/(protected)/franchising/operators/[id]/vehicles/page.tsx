@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Plus, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
-import OperatorVehiclesTable from "./operator-vehicles-table.tsx";
+import OperatorVehiclesTable from "./operator-vehicles-table";
 
 interface Operator {
   id: string;

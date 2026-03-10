@@ -8,9 +8,9 @@ export function Header({ session }: { session: string | null }) {
   const userSessionId = useUserSession(session);
 
   const handleSignIn = async () => {
-    const userUid = await signInWithGoogle();
-    if (userUid) {
-      await createSession(userUid);
+    const result = await signInWithGoogle();
+    if (result?.uid) {
+      await createSession(result.uid);
     }
   };
 

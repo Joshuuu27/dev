@@ -77,15 +77,22 @@ export async function GET(request: Request) {
     
     const alerts: any[] = [];
     alertsSnapshot.forEach((doc: DocumentSnapshot) => {
-      const data = doc.data();
+      const data = doc.data() || {};
+      const status = data.status === "resolved" || data.status === "cancelled" ? data.status : "active";
       alerts.push({
-        id: doc.id,
         ...data,
+        id: String(doc.id),
+        status,
         timestamp: data?.timestamp?.toDate?.() || new Date(),
       });
     });
 
-    return NextResponse.json(alerts);
+    return NextResponse.json(alerts, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        Pragma: "no-cache",
+      },
+    });
   } catch (error) {
     console.error("Error fetching SOS alerts:", error);
     return NextResponse.json(

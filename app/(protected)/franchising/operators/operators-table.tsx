@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/common/data-table";
+import { SearchBar } from "@/components/common/SearchBar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, Eye, Edit, Users } from "lucide-react";
+import { MoreHorizontal, Trash2, Eye, Edit, Users, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
 import AddDriverModal from "./add-driver-modal";
 import EditOperatorModal from "./edit-operator-modal";
@@ -36,6 +37,25 @@ export function OperatorsTable({ data, onOperatorUpdated }: OperatorsTableProps)
   const [isAddDriverOpen, setIsAddDriverOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+
+  const filteredData = useMemo(() => {
+    let list = data;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((op) => {
+        const name = String(op.name ?? "").toLowerCase();
+        const email = String(op.email ?? "").toLowerCase();
+        const franchise = String(op.franchiseNumber ?? "").toLowerCase();
+        return name.includes(q) || email.includes(q) || franchise.includes(q);
+      });
+    }
+    if (roleFilter !== "all") {
+      list = list.filter((op) => String(op.role ?? "").toLowerCase() === roleFilter.toLowerCase());
+    }
+    return list;
+  }, [data, searchText, roleFilter]);
 
   const columns: ColumnDef<Operator>[] = [
     {
@@ -127,7 +147,45 @@ export function OperatorsTable({ data, onOperatorUpdated }: OperatorsTableProps)
 
   return (
     <>
-      <DataTable columns={columns} data={data} />
+      <DataTable
+        columns={columns}
+        data={filteredData}
+        showOrderNumbers={true}
+        rowsPerPage={10}
+        showPagination={true}
+        showColumnFilter={false}
+        showColumnToggle={true}
+        extraToolbarContent={
+          <>
+            <SearchBar
+              value={searchText}
+              onChange={setSearchText}
+              placeholder="Search by name, email, franchise #..."
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-sm">
+                  {roleFilter === "all" ? "Role" : `Role: ${roleFilter}`}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[120px]">
+                <DropdownMenuItem onClick={() => setRoleFilter("all")} className="cursor-pointer">
+                  All roles
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRoleFilter("operator")} className="cursor-pointer">
+                  Operator
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+        emptyMessage={
+          searchText.trim() || roleFilter !== "all"
+            ? "No operators match your filters or search."
+            : "No operators found."
+        }
+      />
 
       {/* Edit Operator Modal */}
       <EditOperatorModal

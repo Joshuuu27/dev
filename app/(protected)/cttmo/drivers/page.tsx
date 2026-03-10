@@ -5,9 +5,9 @@ import { useAuthContext } from "@/app/context/AuthContext";
 import CttmoHeader from "@/components/cttmo/cttmo-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/common/data-table/DataTable";
+import { SearchBar } from "@/components/common/SearchBar";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AlertTriangle, ChevronDown, MoreHorizontal } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,26 @@ const CttmoDriversPage = () => {
   );
   const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
   const [duplicateDrivers, setDuplicateDrivers] = useState<Driver[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+
+  const filteredDrivers = useMemo(() => {
+    let list = drivers;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((d) => {
+        const name = String(d.name ?? d.displayName ?? "").toLowerCase();
+        const email = String(d.email ?? "").toLowerCase();
+        const phone = String(d.phone ?? d.phoneNumber ?? "").toLowerCase();
+        const license = String(d.licenseNumber ?? d.license_no ?? d.license ?? "").toLowerCase();
+        return name.includes(q) || email.includes(q) || phone.includes(q) || license.includes(q);
+      });
+    }
+    if (roleFilter !== "all") {
+      list = list.filter((d) => String(d.role ?? "").toLowerCase() === roleFilter.toLowerCase());
+    }
+    return list;
+  }, [drivers, searchText, roleFilter]);
 
   useEffect(() => {
     const load = async () => {
@@ -398,14 +419,43 @@ const CttmoDriversPage = () => {
             {drivers.length > 0 && (
               <div className="overflow-x-auto">
                 <DataTable
-                  data={drivers}
+                  data={filteredDrivers}
                   columns={columns}
                   showOrderNumbers={true}
                   rowsPerPage={10}
                   showPagination={true}
-                  showColumnFilter={true}
+                  showColumnFilter={false}
                   showColumnToggle={true}
-                  emptyMessage="No drivers found."
+                  extraToolbarContent={
+                    <>
+                      <SearchBar
+                        value={searchText}
+                        onChange={setSearchText}
+                        placeholder="Search by name, email, license, phone..."
+                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 text-sm">
+                            {roleFilter === "all" ? "Role" : `Role: ${roleFilter}`}
+                            <ChevronDown className="ml-2 h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-[120px]">
+                          <DropdownMenuItem onClick={() => setRoleFilter("all")} className="cursor-pointer">
+                            All roles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("driver")} className="cursor-pointer">
+                            Driver
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  }
+                  emptyMessage={
+                    searchText.trim() || roleFilter !== "all"
+                      ? "No drivers match your filters or search."
+                      : "No drivers found."
+                  }
                   getRowClassName={(driver) =>
                     hasNoLicense(driver) ? "bg-amber-50 hover:bg-amber-100" : ""
                   }

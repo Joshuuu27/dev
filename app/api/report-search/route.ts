@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase.admin";
 
 /**
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
       .get();
 
     const drivers = driversSnap.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() }))
       .filter((d: any) => {
         const name = (d.displayName || d.name || "").toString().toLowerCase();
         return name.includes(q);
@@ -49,7 +50,7 @@ export async function GET(req: Request) {
       let operatorName = "Unknown";
 
       if (!vehiclesSnap.empty) {
-        vehiclesSnap.docs.forEach((d) => {
+        vehiclesSnap.docs.forEach((d: QueryDocumentSnapshot) => {
           const p = d.data().plateNumber;
           if (p && !plates.includes(p)) plates.push(p);
         });
@@ -84,7 +85,7 @@ export async function GET(req: Request) {
       .get();
 
     const operators = operatorsSnap.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() }))
       .filter((o: any) => {
         const name = (o.displayName || o.name || "").toString().toLowerCase();
         return name.includes(q);

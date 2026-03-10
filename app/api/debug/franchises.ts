@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase.admin";
 
 // Helper function to parse Firestore date in any format
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     const snapshot = await db.collection("vehicles").get();
     const now = new Date();
 
-    const franchises = snapshot.docs.map((doc) => {
+    const franchises = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const vehicle = doc.data();
       let expiryDateObj: any = null;
       let expiryDateFormatted = "N/A";

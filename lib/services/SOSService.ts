@@ -265,6 +265,26 @@ export async function updateSOSAlertStatus(
 }
 
 /**
+ * Update SOS alert location (live tracking) via API. Call periodically while SOS is active.
+ */
+export async function updateSOSAlertLocationViaAPI(
+  alertId: string,
+  latitude: number,
+  longitude: number
+): Promise<void> {
+  const res = await fetch("/api/user/sos-alerts", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ alertId, latitude, longitude }),
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to update SOS location");
+  }
+}
+
+/**
  * Update SOS alert status via Police/CTTMO API (server-side, bypasses Firestore rules)
  * Use this from Police and CTTMO pages for reliable status updates.
  */

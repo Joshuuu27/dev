@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase.admin";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(_req: Request, { params }: RouteParams) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const doc = await db.collection("users").doc(params.id).get();
+    const { id } = await params;
+    const doc = await db.collection("users").doc(id).get();
 
     if (!doc.exists) {
       return NextResponse.json({ error: "Driver not found" }, { status: 404 });

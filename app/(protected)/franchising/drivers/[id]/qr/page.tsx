@@ -11,10 +11,11 @@ import Header from "@/components/franchising/franchising-header";
 
 export default function DriverQRPage() {
   const { id } = useParams();
-  const [driver, setDriver] = useState(null);
+  const [driver, setDriver] = useState<{ id: string; name?: string } | null>(null);
 
   const downloadQR = () => {
     const canvas = document.querySelector("canvas");
+    if (!canvas) return;
     const png = canvas.toDataURL("image/png");
     const link = document.createElement("a");
     link.href = png;

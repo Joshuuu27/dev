@@ -1,3 +1,4 @@
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase.admin";
 
 export async function index() {
@@ -7,7 +8,7 @@ export async function index() {
     .get();
 
 
-  return snap.docs.map((doc) => ({
+  return snap.docs.map((doc: QueryDocumentSnapshot) => ({
     id: doc.id,
     ...doc.data(),
   }));

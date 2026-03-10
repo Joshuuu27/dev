@@ -27,6 +27,10 @@ interface MapComponentProps {
   onFareChange?: (fare: number | null) => void;
   onFareCalculating?: (isCalculating: boolean) => void;
   onMapClick?: (data: { lat: number; lng: number; address?: string }) => void;
+  /** When start/from coords are set but label is missing or raw coords, map resolves place name and calls this */
+  onStartingPointResolved?: (address: string) => void;
+  /** When destination coords are set but label is missing or raw coords, map resolves place name and calls this */
+  onDestinationResolved?: (address: string) => void;
   startTracking?: boolean;
 }
 
@@ -47,7 +51,7 @@ const GoogleMapErrorPanel = () => (
   </div>
 );
 
-export default function MapComponent({ startingPoint, destination, startCoords, destCoords, onFareChange, onFareCalculating, onMapClick, startTracking }: MapComponentProps) {
+export default function MapComponent({ startingPoint, destination, startCoords, destCoords, onFareChange, onFareCalculating, onMapClick, onStartingPointResolved, onDestinationResolved, startTracking }: MapComponentProps) {
   const [mapAuthError, setMapAuthError] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
@@ -65,6 +69,8 @@ export default function MapComponent({ startingPoint, destination, startCoords, 
   const destinationMarker = useRef<any>(null);
   const originInfoWindow = useRef<any>(null);
   const destinationInfoWindow = useRef<any>(null);
+  const lastResolvedStartKeyRef = useRef<string>("");
+  const lastResolvedDestKeyRef = useRef<string>("");
 
   // Watch for startTracking prop to begin/stop GPS tracking
   useEffect(() => {
@@ -379,6 +385,50 @@ export default function MapComponent({ startingPoint, destination, startCoords, 
       setupMapClickListener();
     }
   }, [onMapClick, setupMapClickListener]);
+
+  // Helper: treat as "no real place name" so we should reverse-geocode
+  const isRawCoordsOrEmpty = useCallback((s: string) => {
+    if (!s || !s.trim()) return true;
+    return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(s.trim());
+  }, []);
+
+  // When we have start/from coords but label is missing or raw, resolve place name and notify parent
+  useEffect(() => {
+    if (!(window as any).google || !startCoords?.lat || !startCoords?.lng || !onStartingPointResolved) return;
+    if (!isRawCoordsOrEmpty(startingPoint)) return;
+    const key = `${startCoords.lat},${startCoords.lng}`;
+    if (lastResolvedStartKeyRef.current === key) return;
+
+    getPlaceNameFromCoordinates(startCoords.lat, startCoords.lng, (data) => {
+      if (data.address) {
+        lastResolvedStartKeyRef.current = key;
+        onStartingPointResolved(data.address);
+      }
+    });
+  }, [startCoords, startingPoint, onStartingPointResolved, getPlaceNameFromCoordinates, isRawCoordsOrEmpty]);
+
+  useEffect(() => {
+    if (!startCoords) lastResolvedStartKeyRef.current = "";
+  }, [startCoords]);
+
+  // When we have destination coords but label is missing or raw, resolve place name and notify parent
+  useEffect(() => {
+    if (!(window as any).google || !destCoords?.lat || !destCoords?.lng || !onDestinationResolved) return;
+    if (!isRawCoordsOrEmpty(destination)) return;
+    const key = `${destCoords.lat},${destCoords.lng}`;
+    if (lastResolvedDestKeyRef.current === key) return;
+
+    getPlaceNameFromCoordinates(destCoords.lat, destCoords.lng, (data) => {
+      if (data.address) {
+        lastResolvedDestKeyRef.current = key;
+        onDestinationResolved(data.address);
+      }
+    });
+  }, [destCoords, destination, onDestinationResolved, getPlaceNameFromCoordinates, isRawCoordsOrEmpty]);
+
+  useEffect(() => {
+    if (!destCoords) lastResolvedDestKeyRef.current = "";
+  }, [destCoords]);
 
   // Update origin marker when startCoords changes
   useEffect(() => {

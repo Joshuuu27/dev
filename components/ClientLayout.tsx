@@ -17,4 +17,4 @@ export const ClientLayout = ({ children }: { children: React.ReactNode }) => {
       </AuthContextProvider>
     </NuqsAdapter>
   );
-};
+}; 

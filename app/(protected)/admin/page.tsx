@@ -26,7 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Shield, Users, Search } from "lucide-react";
+import { UserPlus, Shield, Users, Search, LayoutDashboard, Car, Building2, Bus, UserCircle, BadgeCheck } from "lucide-react";
 import { toast } from "react-toastify";
 
 interface Driver {
@@ -51,12 +51,26 @@ const AdminPage = () => {
   const [query, setQuery] = useState("");
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("drivers");
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Dashboard stats
+  const [stats, setStats] = useState<{
+    police: number;
+    cttmo: number;
+    commuters: number;
+    franchise: number;
+    operators: number;
+    drivers: number;
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   
   // User creation form state
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [createUserData, setCreateUserData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    suffix: "",
     email: "",
     password: "",
     userRole: "franchising",
@@ -92,6 +106,27 @@ const AdminPage = () => {
   useEffect(() => {
     if (activeTab === "police-head") {
       fetchPoliceData();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "dashboard") {
+      const fetchStats = async () => {
+        setStatsLoading(true);
+        try {
+          const res = await fetch("/api/admin/stats");
+          if (res.ok) {
+            const data = await res.json();
+            setStats(data);
+          }
+        } catch (e) {
+          console.error("Error fetching stats:", e);
+          toast.error("Failed to load dashboard stats");
+        } finally {
+          setStatsLoading(false);
+        }
+      };
+      fetchStats();
     }
   }, [activeTab]);
 
@@ -140,8 +175,8 @@ const AdminPage = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!createUserData.name || !createUserData.email || !createUserData.password) {
-      toast.error("Please fill in all fields");
+    if (!createUserData.firstName.trim() || !createUserData.lastName.trim() || !createUserData.email || !createUserData.password) {
+      toast.error("Please fill in first name, last name, email and password");
       return;
     }
 
@@ -161,7 +196,7 @@ const AdminPage = () => {
 
       toast.success("User created successfully!");
       setIsCreateUserOpen(false);
-      setCreateUserData({ name: "", email: "", password: "", userRole: "franchising" });
+      setCreateUserData({ firstName: "", lastName: "", middleName: "", suffix: "", email: "", password: "", userRole: "franchising" });
     } catch (error: any) {
       toast.error(error.message || "Failed to create user");
     } finally {
@@ -215,7 +250,11 @@ const AdminPage = () => {
 
       <main className="min-h-screen bg-[#F8F8FA] max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-xl bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-1">
+          <TabsList className="grid w-full grid-cols-4 rounded-xl bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-1">
+            <TabsTrigger value="dashboard">
+              <LayoutDashboard className="w-4 h-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="drivers">
               <Search className="w-4 h-4 mr-2" />
               Find Drivers
@@ -229,6 +268,94 @@ const AdminPage = () => {
               Police Head
             </TabsTrigger>
           </TabsList>
+
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="mt-6">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold">Account Overview</h2>
+                <p className="text-muted-foreground">Registered accounts by role</p>
+              </div>
+              {statsLoading ? (
+                <LoadingScreen />
+              ) : stats ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card className="border border-slate-100 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                        <Shield className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Police Accounts</p>
+                        <p className="text-2xl font-bold">{stats.police}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-100 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                        <Building2 className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">CTTMO Accounts</p>
+                        <p className="text-2xl font-bold">{stats.cttmo}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-100 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                        <UserCircle className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Commuters</p>
+                        <p className="text-2xl font-bold">{stats.commuters}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-100 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                        <BadgeCheck className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Franchise</p>
+                        <p className="text-2xl font-bold">{stats.franchise}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-100 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                        <Bus className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Operators</p>
+                        <p className="text-2xl font-bold">{stats.operators}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border border-slate-100 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    <CardContent className="p-6 flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+                        <Car className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Drivers</p>
+                        <p className="text-2xl font-bold">{stats.drivers}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="border border-slate-100 bg-white rounded-2xl">
+                  <CardContent className="p-6">
+                    <p className="text-muted-foreground">Unable to load stats. Switch tabs and try again.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
           {/* Drivers Tab */}
           <TabsContent value="drivers" className="mt-6">
@@ -346,14 +473,44 @@ const AdminPage = () => {
             <DialogTitle>Create New User</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={createUserData.name}
-                onChange={(e) => setCreateUserData({ ...createUserData, name: e.target.value })}
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={createUserData.firstName}
+                  onChange={(e) => setCreateUserData({ ...createUserData, firstName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={createUserData.lastName}
+                  onChange={(e) => setCreateUserData({ ...createUserData, lastName: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="middleName">Middle Name <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  id="middleName"
+                  value={createUserData.middleName}
+                  onChange={(e) => setCreateUserData({ ...createUserData, middleName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="suffix">Suffix <span className="text-muted-foreground font-normal">(e.g. Jr., Sr., III)</span></Label>
+                <Input
+                  id="suffix"
+                  value={createUserData.suffix}
+                  onChange={(e) => setCreateUserData({ ...createUserData, suffix: e.target.value })}
+                  placeholder="Optional"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

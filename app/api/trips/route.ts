@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db, adminAuth, firebaseAdmin } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
 
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
       .where("userId", "==", userId)
       .get();
 
-    const trips = snapshot.docs.map((docSnap) => {
+    const trips = snapshot.docs.map((docSnap: QueryDocumentSnapshot) => {
       const d = docSnap.data();
       const createdAt = d.createdAt?.toDate?.() ?? d.createdAt;
       const completedAt = d.completedAt?.toDate?.() ?? d.completedAt;
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
       };
     });
 
-    trips.sort((a, b) => {
+    trips.sort((a: { createdAt?: string }, b: { createdAt?: string }) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bTime - aTime;

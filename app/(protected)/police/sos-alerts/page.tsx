@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/common/data-table/DataTable";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { AlertTriangle, MapPin, Phone, Mail, MoreHorizontal, Eye } from "lucide-react";
+import { AlertTriangle, MapPin, Phone, Mail, MoreHorizontal, Eye, Calendar, ChevronDown } from "lucide-react";
 import { SOSAlert, updateSOSAlertStatusViaAPI } from "@/lib/services/SOSService";
 import { LoadingScreen } from "@/components/common/loading-component";
 import { toast } from "react-toastify";
@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SearchBar } from "@/components/common/SearchBar";
 
 export default function SOSAlertsPage() {
   const { setHasNewAlert: setContextHasNewAlert } = useSOSAlertContext();
@@ -42,8 +43,50 @@ export default function SOSAlertsPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [hasNewAlert, setHasNewAlert] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [searchText, setSearchText] = useState("");
   const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const previousAlertsRef = useRef<SOSAlert[]>([]);
+
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    alerts.forEach((a) => years.add(new Date(a.timestamp).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [alerts]);
+
+  const alertsByYear = useMemo(() => {
+    let list = alerts;
+    if (selectedYear !== "all") {
+      const y = parseInt(selectedYear, 10);
+      list = list.filter((a) => new Date(a.timestamp).getFullYear() === y);
+    }
+    if (selectedStatus !== "all") {
+      list = list.filter((a) => String(a?.status).toLowerCase() === selectedStatus.toLowerCase());
+    }
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((a) => {
+        const userName = String(a.userName ?? "").toLowerCase();
+        const userEmail = String(a.userEmail ?? "").toLowerCase();
+        const driverName = String(a.driverName ?? "").toLowerCase();
+        const plateNumber = String(a.plateNumber ?? "").toLowerCase();
+        const address = String(a.address ?? "").toLowerCase();
+        const vehicleType = String(a.vehicleType ?? "").toLowerCase();
+        const userPhone = String(a.userPhone ?? "").toLowerCase();
+        return (
+          userName.includes(q) ||
+          userEmail.includes(q) ||
+          driverName.includes(q) ||
+          plateNumber.includes(q) ||
+          address.includes(q) ||
+          vehicleType.includes(q) ||
+          userPhone.includes(q)
+        );
+      });
+    }
+    return list;
+  }, [alerts, selectedYear, selectedStatus, searchText]);
 
   const columns: ColumnDef<SOSAlert>[] = [
     {
@@ -187,7 +230,6 @@ export default function SOSAlertsPage() {
 
   const fetchAlerts = async () => {
     try {
-      // Fetch all SOS alerts from the API (regardless of status)
       const response = await fetch("/api/police/sos-alerts");
       if (!response.ok) throw new Error("Failed to fetch alerts");
       const data = await response.json();
@@ -305,7 +347,8 @@ export default function SOSAlertsPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">SOS Alerts</h1>
             <p className="text-gray-600 mt-2">
-              Emergency alerts from users ({alerts.length})
+              Emergency alerts from users ({alertsByYear.length}
+              {(selectedYear !== "all" || selectedStatus !== "all" || searchText.trim()) ? ` of ${alerts.length}` : ""})
             </p>
           </div>
           <div className="flex gap-2">
@@ -344,15 +387,65 @@ export default function SOSAlertsPage() {
         )}
 
         <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-sm font-medium text-slate-600">Year:</span>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[140px] h-9">
+                <Calendar className="mr-2 h-4 w-4 text-slate-500" />
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All years</SelectItem>
+                {availableYears.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <DataTable
-            data={alerts}
+            data={alertsByYear}
             columns={columns}
             showOrderNumbers={true}
             rowsPerPage={10}
             showPagination={true}
-            showColumnFilter={true}
+            showColumnFilter={false}
             showColumnToggle={true}
-            emptyMessage="No SOS alerts found."
+            extraToolbarContent={
+              <>
+                <SearchBar
+                  value={searchText}
+                  onChange={setSearchText}
+                  placeholder="Search user, driver, plate, email, location..."
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-sm">
+                      {selectedStatus === "all" ? "Status" : `Status: ${selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)}`}
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[140px]">
+                    <DropdownMenuItem onClick={() => setSelectedStatus("all")} className="cursor-pointer">
+                      All statuses
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStatus("active")} className="cursor-pointer">
+                      Active
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStatus("resolved")} className="cursor-pointer">
+                      Resolved
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStatus("cancelled")} className="cursor-pointer">
+                      Cancelled
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            }
+            emptyMessage={
+              selectedYear !== "all" || selectedStatus !== "all" || searchText.trim()
+                ? "No alerts match your filters or search."
+                : "No SOS alerts found."
+            }
           />
         </div>
       </div>
