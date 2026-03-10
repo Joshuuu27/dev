@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminAuth, db } from "@/lib/firebase.admin";
+import { formatDisplayName } from "@/lib/utils/name";
 
 export async function POST(req: Request) {
   
@@ -13,22 +14,43 @@ export async function POST(req: Request) {
 
     // if (!token) return new Response("Unauthorized", { status: 401 });
 
-    const { email, password, name, role } = await req.json();
+    const body = await req.json();
+    const { email, password, role } = body;
+
+    const firstName = (body.firstName ?? "").trim();
+    const lastName = (body.lastName ?? "").trim();
+    const middleName = (body.middleName ?? "").trim();
+    const suffix = (body.suffix ?? "").trim();
+    const legacyName = (body.name ?? "").trim();
+
+    const name = firstName && lastName
+      ? formatDisplayName({ firstName, lastName, middleName: middleName || undefined, suffix: suffix || undefined })
+      : legacyName;
+
+    if (!email || !password) {
+      return NextResponse.json({ success: false, error: "Missing email or password" }, { status: 400 });
+    }
 
     // 1. Create user in Firebase Auth
     const userRecord = await adminAuth.createUser({
       email,
       password,
-      displayName: name
+      displayName: name || undefined,
     });
 
     // 2. Save extra user fields into Firestore (optional)
-    await db.collection("users").doc(userRecord.uid).set({
+    const profile: Record<string, unknown> = {
       email,
-      name,
+      name: name || undefined,
       role,
-      createdAt: Date.now()
-    });
+      createdAt: Date.now(),
+    };
+    if (firstName) profile.firstName = firstName;
+    if (lastName) profile.lastName = lastName;
+    if (middleName) profile.middleName = middleName;
+    if (suffix) profile.suffix = suffix;
+
+    await db.collection("users").doc(userRecord.uid).set(profile);
 
      await adminAuth.setCustomUserClaims(userRecord.uid, { role });
 

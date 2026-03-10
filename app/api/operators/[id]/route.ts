@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, adminAuth } from "@/lib/firebase.admin";
+import { getDisplayName } from "@/lib/utils/name";
 
 export async function GET(
   req: Request,
@@ -17,7 +18,12 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ id: doc.id, ...doc.data() });
+    const data = doc.data() || {};
+    const response = { id: doc.id, ...data };
+    if (!response.name && (data.firstName || data.lastName)) {
+      response.name = getDisplayName(data);
+    }
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching operator:", error);
     return NextResponse.json(
@@ -35,7 +41,13 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { name, email, franchiseNumber } = body;
+    const { email, franchiseNumber } = body;
+
+    const firstName = (body.firstName ?? "").trim();
+    const lastName = (body.lastName ?? "").trim();
+    const middleName = (body.middleName ?? "").trim();
+    const suffix = (body.suffix ?? "").trim();
+    const legacyName = (body.name ?? "").trim();
 
     // Verify operator exists
     const operatorDoc = await db.collection("users").doc(operatorId).get();
@@ -46,14 +58,27 @@ export async function PATCH(
       );
     }
 
-    // Update operator
-    const updateData: any = {};
-    if (name) updateData.name = name;
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
     if (email) updateData.email = email;
     if (franchiseNumber !== undefined) {
       updateData.franchiseNumber = franchiseNumber || null;
     }
-    updateData.updatedAt = new Date();
+
+    if (firstName || lastName) {
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
+      if (middleName) updateData.middleName = middleName;
+      if (suffix) updateData.suffix = suffix;
+      const { formatDisplayName } = await import("@/lib/utils/name");
+      updateData.name = formatDisplayName({
+        firstName: firstName || (operatorDoc.data()?.firstName as string) || "",
+        lastName: lastName || (operatorDoc.data()?.lastName as string) || "",
+        middleName: middleName || (operatorDoc.data()?.middleName as string) || undefined,
+        suffix: suffix || (operatorDoc.data()?.suffix as string) || undefined,
+      });
+    } else if (legacyName) {
+      updateData.name = legacyName;
+    }
 
     await db.collection("users").doc(operatorId).update(updateData);
 

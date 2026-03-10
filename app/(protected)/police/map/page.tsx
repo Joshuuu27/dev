@@ -73,6 +73,7 @@ export default function MapPage() {
   const [newStatus, setNewStatus] = useState<"active" | "resolved" | "cancelled">("active");
   const [isUpdating, setIsUpdating] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [liveTracking, setLiveTracking] = useState(true);
   const [hasNewAlert, setHasNewAlert] = useState(false);
   const [, setIsBlinking] = useState(false);
   const blinkIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -85,7 +86,7 @@ export default function MapPage() {
   const onAlertSelectRef = useRef<(alert: SOSAlert) => void>(() => {});
   onAlertSelectRef.current = (alert: SOSAlert) => {
     setSelectedAlert(alert);
-    setNewStatus(alert.status);
+    setNewStatus(alert.status === "active" || alert.status === "resolved" || alert.status === "cancelled" ? alert.status : "active");
     setIsStatusDialogOpen(true);
   };
 
@@ -106,10 +107,12 @@ export default function MapPage() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Update markers when alerts or map change
+  // Update markers: only show active SOS (resolved/cancelled removed); zoom to SOS area only
   useEffect(() => {
     const g = (window as WindowWithGoogle).google;
     if (!g?.maps || !mapInstanceRef.current) return;
+
+    const mapAlerts = alerts.filter((a) => String(a?.status) === "active");
     
     // Clean up previous markers and pulsing circles
     markersRef.current.forEach((m) => m.setMap(null));
@@ -121,7 +124,7 @@ export default function MapPage() {
     
     const bounds = new g.maps.LatLngBounds();
     
-    for (const alert of alerts) {
+    for (const alert of mapAlerts) {
       const pos = { lat: alert.latitude, lng: alert.longitude };
       const color = markerColorForStatus(alert.status);
       const isActive = alert.status === "active";
@@ -200,8 +203,14 @@ export default function MapPage() {
       bounds.extend(pos);
     }
     
-    if (alerts.length > 0) {
-      mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 40, bottom: 40, left: 40 });
+    if (mapAlerts.length > 0) {
+      if (mapAlerts.length === 1) {
+        const pos = { lat: mapAlerts[0].latitude, lng: mapAlerts[0].longitude };
+        mapInstanceRef.current.setCenter(pos);
+        mapInstanceRef.current.setZoom(16);
+      } else {
+        mapInstanceRef.current.fitBounds(bounds, { top: 80, right: 40, bottom: 40, left: 40 });
+      }
     } else {
       mapInstanceRef.current.setCenter(DEFAULT_CENTER);
       mapInstanceRef.current.setZoom(11);
@@ -217,12 +226,12 @@ export default function MapPage() {
   useEffect(() => {
     fetchAlerts();
 
-    // Set up auto-refresh every 10 seconds if enabled
+    const pollMs = liveTracking ? 2000 : autoRefresh ? 10000 : 0;
     let interval: NodeJS.Timeout;
-    if (autoRefresh) {
+    if (pollMs > 0) {
       interval = setInterval(() => {
         fetchAlerts();
-      }, 10000);
+      }, pollMs);
     }
 
     return () => {
@@ -231,7 +240,7 @@ export default function MapPage() {
       pulseIntervalsRef.current.forEach((interval) => clearInterval(interval));
       pulseIntervalsRef.current = [];
     };
-  }, [autoRefresh]);
+  }, [autoRefresh, liveTracking]);
 
   // Update page title with blinking effect and play sound for new alerts
   useEffect(() => {
@@ -274,10 +283,10 @@ export default function MapPage() {
     }
   }, [hasNewAlert, setContextHasNewAlert]);
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = async (noCache = false) => {
     try {
-      // Fetch all SOS alerts from the API (regardless of status)
-      const response = await fetch("/api/police/sos-alerts");
+      const url = noCache ? `/api/police/sos-alerts?_=${Date.now()}` : "/api/police/sos-alerts";
+      const response = await fetch(url, noCache ? { cache: "no-store", credentials: "include" } : {});
       if (!response.ok) throw new Error("Failed to fetch alerts");
       const data = await response.json();
       
@@ -313,18 +322,30 @@ export default function MapPage() {
   };
 
   const handleStatusUpdate = async () => {
-    if (!selectedAlert) return;
+    const alertIdToUpdate = selectedAlert?.id;
+    const newStatusValue = newStatus;
+    if (!alertIdToUpdate || !newStatusValue) return;
 
     try {
       setIsUpdating(true);
-      await updateSOSAlertStatusViaAPI(selectedAlert.id, newStatus);
+      await updateSOSAlertStatusViaAPI(String(alertIdToUpdate), newStatusValue);
       toast.success("Alert status updated successfully!");
       setIsStatusDialogOpen(false);
       setSelectedAlert(null);
-      fetchAlerts();
+      // Update local state immediately: resolved/cancelled alerts disappear from map
+      setAlerts((prev) => {
+        const next = prev.map((a) =>
+          String(a.id) === String(alertIdToUpdate)
+            ? { ...a, status: newStatusValue }
+            : { ...a }
+        );
+        return next;
+      });
+      // Polling (every 2s when live) will refetch and keep data in sync; no refetch here so we don't overwrite with stale cache
     } catch (error) {
       console.error("Error updating status:", error);
-      toast.error("Failed to update alert status");
+      const message = error instanceof Error ? error.message : "Failed to update alert status";
+      toast.error(message);
     } finally {
       setIsUpdating(false);
     }
@@ -395,16 +416,25 @@ export default function MapPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900">SOS Map</h1>
             <span className="text-gray-600 text-sm">
-              {alerts.length} location{alerts.length !== 1 ? "s" : ""} on map
+              {alerts.filter((a) => String(a?.status) === "active").length} active on map
+              {alerts.length > 0 && alerts.some((a) => String(a?.status) !== "active") && (
+                <span className="text-gray-400"> ({alerts.filter((a) => String(a?.status) !== "active").length} resolved)</span>
+              )}
             </span>
-            {alerts.length > 0 && (
+            {alerts.filter((a) => String(a?.status) === "active").length > 0 && (
               <div className="flex items-center gap-2 px-2 py-1 bg-red-50 border border-red-200 rounded text-red-700 text-sm font-medium">
                 <AlertTriangle className="w-4 h-4" />
-                {alerts.length} alert{alerts.length !== 1 ? "s" : ""}
+                {alerts.filter((a) => String(a?.status) === "active").length} active alert{alerts.filter((a) => String(a?.status) === "active").length !== 1 ? "s" : ""}
               </div>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {liveTracking && (
+              <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-semibold animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-red-500" />
+                Live
+              </span>
+            )}
             {hasNewAlert && (
               <Button
                 onClick={stopAlarm}
@@ -416,7 +446,14 @@ export default function MapPage() {
               </Button>
             )}
             <Button
-              variant={autoRefresh ? "default" : "outline"}
+              variant={liveTracking ? "default" : "outline"}
+              onClick={() => setLiveTracking(!liveTracking)}
+              size="sm"
+            >
+              {liveTracking ? "Live tracking ON" : "Live tracking OFF"}
+            </Button>
+            <Button
+              variant={!liveTracking && autoRefresh ? "default" : "outline"}
               onClick={() => setAutoRefresh(!autoRefresh)}
               size="sm"
             >
@@ -434,9 +471,11 @@ export default function MapPage() {
               Google Maps API key not configured. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
             </div>
           )}
-          {alerts.length === 0 && !loading && GOOGLE_MAPS_API_KEY && (
+          {alerts.filter((a) => String(a?.status) === "active").length === 0 && !loading && GOOGLE_MAPS_API_KEY && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/90 rounded-lg shadow text-sm text-gray-600">
-              No SOS alerts yet. Locations will appear here when reported.
+              {alerts.length === 0
+                ? "No SOS alerts yet. With live tracking ON, positions update every few seconds when commuters move."
+                : "No active SOS alerts. Resolved alerts are removed from the map; zoom shows remaining active areas."}
             </div>
           )}
         </div>
@@ -562,7 +601,7 @@ export default function MapPage() {
               <div className="space-y-2 border-t pt-4">
                 <label className="text-sm font-medium">Update Status</label>
                 <Select
-                  value={newStatus}
+                  value={newStatus || "active"}
                   onValueChange={(value: "active" | "resolved" | "cancelled") => setNewStatus(value)}
                 >
                   <SelectTrigger>
@@ -580,13 +619,14 @@ export default function MapPage() {
 
           <DialogFooter>
             <Button
+              type="button"
               variant="outline"
               onClick={() => setIsStatusDialogOpen(false)}
               disabled={isUpdating}
             >
               Close
             </Button>
-            <Button onClick={handleStatusUpdate} disabled={isUpdating}>
+            <Button type="button" onClick={handleStatusUpdate} disabled={isUpdating}>
               {isUpdating ? "Updating..." : "Update Status"}
             </Button>
           </DialogFooter>

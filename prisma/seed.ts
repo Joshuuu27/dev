@@ -5,7 +5,7 @@ dotenv.config();
 import { hash } from "bcryptjs";
 import prompts from "prompts";
 
-import { prisma } from '../lib/prisma'
+import { prisma } from "../lib/prisma";
 
 async function main() {
   console.log("=== Prisma User Seeder ===");

@@ -24,6 +24,7 @@ import { submitReportCaseViaAPI, ReportCaseInput } from "@/lib/services/ReportSe
 import { useAuthContext } from "@/app/context/AuthContext";
 import { toast } from "react-toastify";
 import { Loader, CheckCircle2, XCircle } from "lucide-react";
+import { SearchBar } from "@/components/common/SearchBar";
 
 interface DriverOperatorMatch {
   driverId: string;
@@ -357,11 +358,12 @@ export function ReportDialogComponent({
             <div className="space-y-2">
               <Label htmlFor="driverOperatorInput">Driver or Operator Name</Label>
               <div className="space-y-1">
-                <Input
+                <SearchBar
                   id="driverOperatorInput"
-                  placeholder="Type the name you remember (driver or operator)"
                   value={formData.driverOperatorInput}
-                  onChange={(e) => handleInputChange("driverOperatorInput", e.target.value)}
+                  onChange={(v) => handleInputChange("driverOperatorInput", v)}
+                  placeholder="Type driver or operator name to search..."
+                  className="w-full max-w-full"
                 />
                 {nameSearchStatus === "searching" && (
                   <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -412,14 +414,16 @@ export function ReportDialogComponent({
             <div className="space-y-2">
               <Label htmlFor="plateNumber">Plate Number *</Label>
               <div className="relative">
-                <Input
+                <SearchBar
                   id="plateNumber"
-                  placeholder="Or type plate to search and auto-fill driver/operator"
-                  value={formData.plateNumber}
-                  onChange={(e) => handleInputChange("plateNumber", e.target.value)}
+                  value={formData.plateNumber ?? ""}
+                  onChange={(v) => handleInputChange("plateNumber", v)}
+                  placeholder="Type plate number to search..."
+                  className="w-full max-w-full"
+                  showClear={plateSearchStatus !== "searching"}
                 />
                 {plateSearchStatus === "searching" && (
-                  <Loader className="absolute right-3 top-3 w-4 h-4 animate-spin text-gray-400" />
+                  <Loader className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400 pointer-events-none" />
                 )}
                 {formData.driverId && driverPlates.length === 0 && (
                   <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AlertCircle, Loader, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +12,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuthContext } from "@/app/context/AuthContext";
-import { createSOSAlertViaAPI } from "@/lib/services/SOSService";
+import { createSOSAlertViaAPI, updateSOSAlertLocationViaAPI } from "@/lib/services/SOSService";
 import { toast } from "react-toastify";
 
 interface SOSButtonProps {
   className?: string;
 }
+
+const LIVE_TRACKING_INTERVAL_MS = 5000;
 
 export default function SOSButton({ className }: SOSButtonProps) {
   const { user } = useAuthContext();
@@ -30,6 +32,45 @@ export default function SOSButton({ className }: SOSButtonProps) {
     address?: string;
   } | null>(null);
   const [locationError, setLocationError] = useState<string>("");
+  const watchIdRef = useRef<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startLiveTracking = (alertId: string) => {
+    if (!navigator.geolocation) return;
+    const sendUpdate = (lat: number, lng: number) => {
+      updateSOSAlertLocationViaAPI(alertId, lat, lng).catch((err) =>
+        console.warn("SOS location update failed:", err)
+      );
+    };
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        sendUpdate(latitude, longitude);
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: LIVE_TRACKING_INTERVAL_MS }
+    );
+    intervalRef.current = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => sendUpdate(position.coords.latitude, position.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: LIVE_TRACKING_INTERVAL_MS }
+      );
+    }, LIVE_TRACKING_INTERVAL_MS);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
 
   const getCurrentLocation = async () => {
     setFetchingLocation(true);
@@ -111,16 +152,14 @@ export default function SOSButton({ className }: SOSButtonProps) {
         sosData.userPhone = user.phoneNumber;
       }
 
-      await createSOSAlertViaAPI(sosData);
+      const alertId = await createSOSAlertViaAPI(sosData);
 
-      toast.success("SOS alert sent to police! Help is on the way.");
+      toast.success("SOS alert sent to police! Live location tracking started.");
       setIsDialogOpen(false);
       setLocation(null);
 
-      // Reset after 2 seconds
-      setTimeout(() => {
-        setLocation(null);
-      }, 2000);
+      // Start live location tracking for this alert (runs until component unmounts)
+      startLiveTracking(alertId);
     } catch (error) {
       console.error("Error sending SOS:", error);
       toast.error("Failed to send SOS alert. Please try again.");

@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuthContext } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Header from "@/components/franchising/franchising-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/common/data-table/DataTable";
+import { SearchBar } from "@/components/common/SearchBar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
@@ -86,6 +95,27 @@ const FranchisesPage = () => {
   const [franchises, setFranchises] = useState<FranchiseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const filteredFranchises = useMemo(() => {
+    let list = franchises;
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      list = list.filter((f) => {
+        const plate = String(f.plateNumber ?? "").toLowerCase();
+        const body = String(f.bodyNumber ?? "").toLowerCase();
+        const franchiseNum = String(f.franchiseNumber ?? "").toLowerCase();
+        const operator = String(f.operatorName ?? "").toLowerCase();
+        const expiry = String(f.franchiseExpiryDate ?? "").toLowerCase();
+        return plate.includes(q) || body.includes(q) || franchiseNum.includes(q) || operator.includes(q) || expiry.includes(q);
+      });
+    }
+    if (statusFilter !== "all") {
+      list = list.filter((f) => f.status === statusFilter);
+    }
+    return list;
+  }, [franchises, searchText, statusFilter]);
 
   useEffect(() => {
     fetchFranchises();
@@ -280,14 +310,46 @@ const FranchisesPage = () => {
               {franchises.length > 0 && (
                 <div className="overflow-x-auto">
                   <DataTable
-                    data={franchises}
+                    data={filteredFranchises}
                     columns={columns}
                     showOrderNumbers={true}
                     rowsPerPage={10}
                     showPagination={true}
-                    showColumnFilter={true}
+                    showColumnFilter={false}
                     showColumnToggle={true}
-                    emptyMessage="No franchises found."
+                    extraToolbarContent={
+                      <>
+                        <SearchBar
+                          value={searchText}
+                          onChange={setSearchText}
+                          placeholder="Search plate, operator, franchise #..."
+                        />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 text-sm">
+                              {statusFilter === "all" ? "Status" : `Status: ${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}`}
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="min-w-[140px]">
+                            <DropdownMenuItem onClick={() => setStatusFilter("all")} className="cursor-pointer">
+                              All statuses
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setStatusFilter("active")} className="cursor-pointer">
+                              Active
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setStatusFilter("expired")} className="cursor-pointer">
+                              Expired
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    }
+                    emptyMessage={
+                      searchText.trim() || statusFilter !== "all"
+                        ? "No franchises match your filters or search."
+                        : "No franchises found."
+                    }
                   />
                 </div>
               )}

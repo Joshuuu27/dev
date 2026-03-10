@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db, firebaseAdmin } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
+import { getDisplayName } from "@/lib/utils/name";
 
 export async function GET(req: Request) {
   try {
@@ -37,21 +39,23 @@ export async function GET(req: Request) {
 
     const officers: Array<{ uid: string; email: string; name: string; role: string }> = [];
     
-    policeSnapshot.docs.forEach((doc) => {
+    policeSnapshot.docs.forEach((doc: QueryDocumentSnapshot) => {
+      const d = doc.data();
       officers.push({
         uid: doc.id,
-        email: doc.data().email,
-        name: doc.data().name,
-        role: doc.data().role,
+        email: d.email,
+        name: getDisplayName(d) || d.name || "",
+        role: d.role,
       });
     });
     
-    headSnapshot.docs.forEach((doc) => {
+    headSnapshot.docs.forEach((doc: QueryDocumentSnapshot) => {
+      const d = doc.data();
       officers.push({
         uid: doc.id,
-        email: doc.data().email,
-        name: doc.data().name,
-        role: doc.data().role,
+        email: d.email,
+        name: getDisplayName(d) || d.name || "",
+        role: d.role,
       });
     });
 

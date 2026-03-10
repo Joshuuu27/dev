@@ -9,20 +9,28 @@ import {
 import { Button } from "@/components/ui/button";
 import { DriversContextMenu } from "./DriversContextMenu";
 
-export function DriversTable({ data }) {
+interface DriverRow {
+  id: string;
+  name?: string;
+  contact?: string;
+  vehicle?: string;
+  [key: string]: unknown;
+}
+
+export function DriversTable({ data }: { data: DriverRow[] }) {
   const [sortField, setSortField] = useState("name");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const sortedData = [...data].sort((a, b) => {
-    const aVal = a[sortField]?.toString().toLowerCase();
-    const bVal = b[sortField]?.toString().toLowerCase();
+    const aVal = a[sortField]?.toString().toLowerCase() ?? "";
+    const bVal = b[sortField]?.toString().toLowerCase() ?? "";
 
     if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
     if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
     return 0;
   });
 
-  const toggleSort = (field) => {
+  const toggleSort = (field: string) => {
     if (field === sortField) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {

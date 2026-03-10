@@ -169,14 +169,16 @@ const DriverSettingsPage = () => {
       // Configure OCR for better accuracy with Philippine license format
       await worker.setParameters({
         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/:",
-        tessedit_pageseg_mode: "6", // Assume uniform block of text
+        tessedit_pageseg_mode: (6 as unknown) as import("tesseract.js").PSM, // PSM 6 = Assume uniform block of text
         preserve_interword_spaces: "1",
       });
 
       // Perform OCR with better configuration
-      const { data: { text, words } } = await worker.recognize(fileToProcess, {
+      const { data } = await worker.recognize(fileToProcess, {
         rectangle: undefined, // Process entire image
       });
+      const text = data.text;
+      const words = "words" in data ? (data as { words?: { text: string }[] }).words : undefined;
       
       await worker.terminate();
 
@@ -326,7 +328,7 @@ const DriverSettingsPage = () => {
         setOcrDebugText(text);
         setShowOcrDebug(true);
         console.log("Could not extract license number. Full OCR text:", text);
-        console.log("OCR Words:", words?.map(w => w.text).join(" | "));
+        console.log("OCR Words:", words?.map((w: { text: string }) => w.text).join(" | "));
         toast.warning("Could not automatically detect license number. Check the OCR output below and enter it manually.");
       }
     } catch (error: any) {

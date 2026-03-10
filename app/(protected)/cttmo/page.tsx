@@ -106,9 +106,9 @@ const CttmoPage = () => {
       <main className="min-h-screen bg-[#F8F8FA] px-4 sm:px-6 py-8">
         <div className="max-w-5xl mx-auto space-y-6">
           <DashboardIntro
-            displayName={user?.displayName}
-            email={user?.email}
-            role={role}
+            displayName={user?.displayName ?? undefined}
+            email={user?.email ?? undefined}
+            role={role ?? undefined}
             subtitle="Manage transport regulations and compliance for the city"
             features={[
               {

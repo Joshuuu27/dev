@@ -135,9 +135,9 @@ const OperatorPage = () => {
       <main className="min-h-screen bg-[#F8F8FA] px-4 sm:px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <DashboardIntro
-            displayName={operatorName}
-            email={user?.email}
-            role={role}
+            displayName={operatorName ?? undefined}
+            email={user?.email ?? undefined}
+            role={role ?? undefined}
             subtitle="Start managing your vehicle franchises"
             features={[
               {

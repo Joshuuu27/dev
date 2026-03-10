@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminAuth, db, firebaseAdmin } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
+import { getDisplayName } from "@/lib/utils/name";
 
 // GET: Get current police head
 export async function GET(req: Request) {
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
       policeHead: {
         uid: policeHeadDoc.id,
         email: policeHeadData.email,
-        name: policeHeadData.name,
+        name: getDisplayName(policeHeadData) || policeHeadData.name,
         role: policeHeadData.role,
       },
     });

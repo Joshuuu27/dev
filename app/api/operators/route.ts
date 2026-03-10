@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase.admin";
 
 export async function GET(req: Request) {
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
       .where("role", "==", "operator")
       .get();
 
-    const operators = snap.docs.map((doc) => ({
+    const operators = snap.docs.map((doc: QueryDocumentSnapshot) => ({
       id: doc.id,
       ...doc.data(),
     }));

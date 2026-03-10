@@ -12,7 +12,10 @@ import { useRouter } from "next/navigation";
 
 export default function AddOfficerPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [suffix, setSuffix] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,8 +47,12 @@ export default function AddOfficerPage() {
     e.preventDefault();
 
     // Validate inputs
-    if (!name || !email || !password) {
-      toast.error("Please fill in all fields.");
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("Please enter first name and last name.");
+      return;
+    }
+    if (!email || !password) {
+      toast.error("Please fill in email and password.");
       return;
     }
 
@@ -71,7 +78,10 @@ export default function AddOfficerPage() {
         body: JSON.stringify({
           email,
           password,
-          name,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          middleName: middleName.trim() || undefined,
+          suffix: suffix.trim() || undefined,
         }),
       });
 
@@ -82,9 +92,12 @@ export default function AddOfficerPage() {
       }
 
       toast.success("Police officer account created successfully!");
-      
+
       // Reset form
-      setName("");
+      setFirstName("");
+      setMiddleName("");
+      setLastName("");
+      setSuffix("");
       setEmail("");
       setPassword("");
     } catch (error: any) {
@@ -135,90 +148,144 @@ export default function AddOfficerPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100 p-7 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Full Name
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter officer's full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={isLoading}
-                className="w-full"
-              />
-            </div>
-
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="officer@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                className="w-full"
-              />
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter password (min. 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full pr-10"
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
+            {/* Layer 1: Name + Email (same layout as register) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">
+                  First Name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+                  />
+                </div>
               </div>
-              <p className="text-sm text-gray-500">
-                Password must be at least 6 characters long.
-              </p>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium text-slate-700">
+                  Last Name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1"
-              >
-                {isLoading ? "Creating Account..." : "Create Police Officer Account"}
-              </Button>
+            {/* Layer 2: Middle Name + Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="middleName" className="text-sm font-medium text-slate-700">
+                  Middle Name <span className="text-slate-400 font-normal">(optional)</span>
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    id="middleName"
+                    type="text"
+                    placeholder="Middle name"
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                    disabled={isLoading}
+                    className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="suffix" className="text-sm font-medium text-slate-700">
+                  Suffix <span className="text-slate-400 font-normal">(e.g. Jr., Sr., III)</span>
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    id="suffix"
+                    type="text"
+                    placeholder="Optional"
+                    value={suffix}
+                    onChange={(e) => setSuffix(e.target.value)}
+                    disabled={isLoading}
+                    className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Layer 3: Email + Password */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                  Email Address
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password (min. 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    minLength={6}
+                    className="pl-10 pr-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-sm text-slate-500">Password must be at least 6 characters long.</p>
+              </div>
+            </div>
+
+            {/* Submit Button (same style as register) */}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 text-sm bg-[#6B46C1] hover:bg-[#5A3AA3] text-white font-semibold rounded-xl transition-colors shadow-sm"
+            >
+              {isLoading ? "Creating account..." : "Create Police Officer Account"}
+            </Button>
           </form>
         </div>
 

@@ -8,7 +8,6 @@ import { Tokens, getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME } from "@/constant";
 
-import { AuthUserProvider } from "../app/context/AuthContext";
 
 import { Header } from "@/components/header";
 import "@/lib/styles/globals.css";

@@ -86,9 +86,9 @@ const DriverPage = () => {
       <main className="min-h-screen bg-[#F8F8FA] px-4 sm:px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <DashboardIntro
-            displayName={user?.displayName}
-            email={user?.email}
-            role={role}
+            displayName={user?.displayName ?? undefined}
+            email={user?.email ?? undefined}
+            role={role ?? undefined}
             subtitle="Maximize your earnings and build your reputation"
             features={[
               {

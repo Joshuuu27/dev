@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { db, adminAuth } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
 
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
       .orderBy("createdAt", "desc")
       .get();
 
-    const reports = snapshot.docs.map((doc) => {
+    const reports = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       return {
         id: doc.id,

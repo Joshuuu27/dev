@@ -11,9 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "react-toastify";
 import { Lock, User, Mail, Phone } from "lucide-react";
 import { Loader } from "lucide-react";
+import { formatDisplayName } from "@/lib/utils/name";
 
 interface AccountFormData {
-  displayName: string;
+  firstName: string;
+  lastName: string;
+  middleName: string;
+  suffix: string;
   email: string;
   phoneNumber: string;
 }
@@ -27,9 +31,12 @@ interface PasswordFormData {
 const OperatorSettingsPage = () => {
   const { user } = useAuthContext();
   const [accountData, setAccountData] = useState<AccountFormData>({
-    displayName: user?.displayName || "",
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    suffix: "",
     email: user?.email || "",
-    phoneNumber: "", // This would need to be stored in your database
+    phoneNumber: "",
   });
 
   const [passwordData, setPasswordData] = useState<PasswordFormData>({
@@ -50,10 +57,13 @@ const OperatorSettingsPage = () => {
         const res = await fetch(`/api/operators/${user.uid}`);
         if (res.ok) {
           const operatorData = await res.json();
-          const name = operatorData.name || operatorData.displayName || user?.displayName || "";
           setAccountData(prev => ({
             ...prev,
-            displayName: name
+            firstName: operatorData.firstName ?? prev.firstName,
+            lastName: operatorData.lastName ?? prev.lastName,
+            middleName: operatorData.middleName ?? prev.middleName ?? "",
+            suffix: operatorData.suffix ?? prev.suffix ?? "",
+            email: operatorData.email ?? prev.email,
           }));
         }
       } catch (error) {
@@ -83,8 +93,8 @@ const OperatorSettingsPage = () => {
   const handleUpdateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!accountData.displayName.trim()) {
-      toast.error("Display name cannot be empty");
+    if (!accountData.firstName.trim() || !accountData.lastName.trim()) {
+      toast.error("First name and last name are required");
       return;
     }
 
@@ -96,23 +106,44 @@ const OperatorSettingsPage = () => {
     try {
       setIsLoadingAccount(true);
 
-      // Update Firebase user profile
+      const displayName = formatDisplayName({
+        firstName: accountData.firstName.trim(),
+        lastName: accountData.lastName.trim(),
+        middleName: accountData.middleName.trim() || undefined,
+        suffix: accountData.suffix.trim() || undefined,
+      });
+
       if (user) {
         try {
           const { updateProfile } = await import("firebase/auth");
-          await updateProfile(user, {
-            displayName: accountData.displayName,
-          });
-          
-          toast.success("Account details updated successfully!");
+          await updateProfile(user, { displayName });
         } catch (error: any) {
           console.error("Error updating profile:", error);
           toast.error(`Error updating profile: ${error.message}`);
+          return;
+        }
+
+        const res = await fetch(`/api/operators/${user.uid}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: accountData.firstName.trim(),
+            lastName: accountData.lastName.trim(),
+            middleName: accountData.middleName.trim() || undefined,
+            suffix: accountData.suffix.trim() || undefined,
+            email: accountData.email,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to update operator");
         }
       }
+      
+      toast.success("Account details updated successfully!");
     } catch (error: any) {
       console.error("Error updating account:", error);
-      toast.error("Failed to update account details");
+      toast.error(error.message || "Failed to update account details");
     } finally {
       setIsLoadingAccount(false);
     }
@@ -230,25 +261,73 @@ const OperatorSettingsPage = () => {
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleUpdateAccount} className="space-y-6">
-                      {/* Display Name */}
-                      <div className="space-y-2">
-                        <Label htmlFor="displayName" className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-600" />
-                          Full Name
-                        </Label>
-                        <Input
-                          id="displayName"
-                          name="displayName"
-                          type="text"
-                          value={accountData.displayName}
-                          onChange={handleAccountChange}
-                          placeholder="Enter your full name"
-                          className="border-gray-200"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Your display name visible to drivers and commuters
-                        </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName" className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-600" />
+                            First Name
+                          </Label>
+                          <Input
+                            id="firstName"
+                            name="firstName"
+                            type="text"
+                            value={accountData.firstName}
+                            onChange={handleAccountChange}
+                            placeholder="First name"
+                            className="border-gray-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName" className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-600" />
+                            Last Name
+                          </Label>
+                          <Input
+                            id="lastName"
+                            name="lastName"
+                            type="text"
+                            value={accountData.lastName}
+                            onChange={handleAccountChange}
+                            placeholder="Last name"
+                            className="border-gray-200"
+                          />
+                        </div>
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="middleName" className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-600" />
+                            Middle Name <span className="text-gray-400 font-normal">(optional)</span>
+                          </Label>
+                          <Input
+                            id="middleName"
+                            name="middleName"
+                            type="text"
+                            value={accountData.middleName}
+                            onChange={handleAccountChange}
+                            placeholder="Middle name"
+                            className="border-gray-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="suffix" className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-600" />
+                            Suffix <span className="text-gray-400 font-normal">(e.g. Jr., Sr., III)</span>
+                          </Label>
+                          <Input
+                            id="suffix"
+                            name="suffix"
+                            type="text"
+                            value={accountData.suffix}
+                            onChange={handleAccountChange}
+                            placeholder="Optional"
+                            className="border-gray-200"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Your display name visible to drivers and commuters
+                      </p>
 
                       {/* Email */}
                       <div className="space-y-2">

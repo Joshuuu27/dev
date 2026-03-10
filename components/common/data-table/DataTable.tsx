@@ -50,6 +50,8 @@ interface DataTableProps<TData> {
   showColumnFilter?: boolean;
   showColumnToggle?: boolean;
   emptyMessage?: string;
+  /** Rendered in the toolbar row (e.g. status filter), before Filter and Customize Columns */
+  extraToolbarContent?: React.ReactNode;
 }
 
 export function DataTable<TData>({
@@ -65,6 +67,7 @@ export function DataTable<TData>({
   showColumnFilter = true,
   showColumnToggle = true,
   emptyMessage = "No data was found.",
+  extraToolbarContent,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -134,8 +137,9 @@ export function DataTable<TData>({
   return (
     <>
       {/* Table Controls - stack on mobile to prevent Filter dropdown overlapping Customize Columns */}
-      {(showColumnFilter || showColumnToggle) && (
+      {(showColumnFilter || showColumnToggle || extraToolbarContent) && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 pb-2">
+          {extraToolbarContent}
           {showColumnFilter && (
             <DataTableFilter table={table} columns={filterColumns} />
           )}

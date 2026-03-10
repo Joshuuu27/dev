@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminAuth, db, firebaseAdmin } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
+import { formatDisplayName } from "@/lib/utils/name";
 
 export async function POST(req: Request) {
   try {
@@ -28,11 +29,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, name, userRole } = await req.json();
+    const body = await req.json();
+    const { email, password, userRole } = body;
 
-    if (!email || !password || !name || !userRole) {
+    const firstName = (body.firstName ?? "").trim();
+    const lastName = (body.lastName ?? "").trim();
+    const middleName = (body.middleName ?? "").trim();
+    const suffix = (body.suffix ?? "").trim();
+    const legacyName = (body.name ?? "").trim();
+
+    const name = firstName && lastName
+      ? formatDisplayName({ firstName, lastName, middleName: middleName || undefined, suffix: suffix || undefined })
+      : legacyName;
+
+    if (!email || !password || !userRole) {
       return NextResponse.json(
-        { error: "Missing required fields: email, password, name, userRole" },
+        { error: "Missing required fields: email, password, userRole" },
+        { status: 400 }
+      );
+    }
+
+    if (!name && !(firstName && lastName)) {
+      return NextResponse.json(
+        { error: "Missing required name: provide firstName and lastName, or name" },
         { status: 400 }
       );
     }
@@ -100,13 +119,19 @@ export async function POST(req: Request) {
     });
 
     // Save user profile to Firestore
-    await db.collection("users").doc(userRecord.uid).set({
+    const profile: Record<string, unknown> = {
       email,
       name,
       role: userRole,
       createdAt: Date.now(),
       createdBy: decoded.uid, // Track who created this account
-    });
+    };
+    if (firstName) profile.firstName = firstName;
+    if (lastName) profile.lastName = lastName;
+    if (middleName) profile.middleName = middleName;
+    if (suffix) profile.suffix = suffix;
+
+    await db.collection("users").doc(userRecord.uid).set(profile);
 
     // Set custom claims
     await adminAuth.setCustomUserClaims(userRecord.uid, { role: userRole });

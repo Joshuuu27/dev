@@ -10,7 +10,6 @@ export async function POST(req: Request) {
     model: "gpt-4o-mini-tts",
     voice: "alloy",
     input: text,
-    format: "mp3",
   });
 
   return new NextResponse(audio.body, {

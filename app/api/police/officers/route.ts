@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminAuth, db, firebaseAdmin } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
+import { formatDisplayName } from "@/lib/utils/name";
 
 export async function POST(req: Request) {
   try {
@@ -29,11 +30,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, name } = await req.json();
+    const body = await req.json();
+    const { email, password } = body;
 
-    if (!email || !password || !name) {
+    const firstName = (body.firstName ?? "").trim();
+    const lastName = (body.lastName ?? "").trim();
+    const middleName = (body.middleName ?? "").trim();
+    const suffix = (body.suffix ?? "").trim();
+    const legacyName = (body.name ?? "").trim();
+
+    const name = firstName && lastName
+      ? formatDisplayName({ firstName, lastName, middleName: middleName || undefined, suffix: suffix || undefined })
+      : legacyName;
+
+    if (!firstName || !lastName) {
       return NextResponse.json(
-        { error: "Missing required fields: email, password, name" },
+        { error: "Missing required fields: firstName and lastName" },
+        { status: 400 }
+      );
+    }
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Missing required fields: email, password" },
         { status: 400 }
       );
     }
@@ -77,13 +96,19 @@ export async function POST(req: Request) {
     });
 
     // Save user profile to Firestore with police role
-    await db.collection("users").doc(userRecord.uid).set({
+    const profile: Record<string, unknown> = {
       email,
       name,
       role: "police",
       createdAt: Date.now(),
       createdBy: decoded.uid, // Track who created this account
-    });
+    };
+    if (firstName) profile.firstName = firstName;
+    if (lastName) profile.lastName = lastName;
+    if (middleName) profile.middleName = middleName;
+    if (suffix) profile.suffix = suffix;
+
+    await db.collection("users").doc(userRecord.uid).set(profile);
 
     // Set custom claims
     await adminAuth.setCustomUserClaims(userRecord.uid, { role: "police" });

@@ -14,7 +14,6 @@ import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { DataTable, DataTableSortList } from "@/components/common/data-table";
 import { DataTableColumnHeader } from "@/components/common/data-table";
-import { DataTableToolbar } from "@/components/common/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -209,11 +208,11 @@ export default function Drivers() {
         </Button>
       </div>
       <div className="data-table-container">
-        <DataTable table={table}>
-          <DataTableToolbar table={table}>
-            <DataTableSortList table={table} />
-          </DataTableToolbar>
-        </DataTable>
+        <DataTable
+          table={table}
+          extraToolbarContent={<DataTableSortList table={table} />}
+          showColumnFilter={false}
+        />
       </div>
     </>
   );

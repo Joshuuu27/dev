@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, firebaseAdmin } from "@/lib/firebase.admin";
 import { SESSION_COOKIE_NAME } from "@/constant";
+import { getDisplayName } from "@/lib/utils/name";
 
 export async function GET(req: Request) {
   try {
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       uid: decoded.uid,
       email: userData?.email,
-      name: userData?.name,
+      name: getDisplayName(userData) || userData?.name,
       role: userData?.role || "police",
       isPoliceHead: userData?.role === "police_head",
     });

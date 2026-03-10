@@ -4,11 +4,13 @@ import { LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { handleLogout } from "@/lib/auth/logout";
 import { APP_NAME } from "@/constant";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const navigationLinks = [
     { label: "Home", href: "/operator" },
@@ -29,16 +31,24 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {navigationLinks.map((link) => (
-              <Link key={link.href} href={link.href}>
-                <Button
-                  variant="ghost"
-                  className="text-sm font-medium text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9] rounded-xl transition-colors px-3 py-2"
-                >
-                  {link.label}
-                </Button>
-              </Link>
-            ))}
+            {navigationLinks.map((link) => {
+              const isBasePath = link.href.split("/").filter(Boolean).length === 1;
+              const isActive = isBasePath ? pathname === link.href : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              return (
+                <Link key={link.href} href={link.href}>
+                  <Button
+                    variant="ghost"
+                    className={`text-sm font-medium rounded-xl transition-colors px-3 py-2 ${
+                      isActive
+                        ? "bg-[#EDEEF9] text-[#6B46C1] font-semibold"
+                        : "text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9]"
+                    }`}
+                  >
+                    {link.label}
+                  </Button>
+                </Link>
+              );
+            })}
             {/* Logout Button */}
             <Button
               variant="outline"
@@ -68,20 +78,28 @@ export default function Header() {
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
           <nav className="lg:hidden mt-4 flex flex-col gap-2 pb-2">
-            {navigationLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9] rounded-xl py-2.5"
+            {navigationLinks.map((link) => {
+              const isBasePath = link.href.split("/").filter(Boolean).length === 1;
+              const isActive = isBasePath ? pathname === link.href : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  {link.label}
-                </Button>
-              </Link>
-            ))}
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start rounded-xl py-2.5 ${
+                      isActive
+                        ? "bg-[#EDEEF9] text-[#6B46C1] font-semibold"
+                        : "text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9]"
+                    }`}
+                  >
+                    {link.label}
+                  </Button>
+                </Link>
+              );
+            })}
             {/* Mobile Logout */}
             <Button
               variant="outline"

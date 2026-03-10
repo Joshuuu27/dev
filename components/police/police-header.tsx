@@ -4,6 +4,7 @@ import { LogOut, Menu, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import authService from "@/lib/services/AuthService";
 import { handleLogout } from "@/lib/auth/logout";
 import { APP_NAME } from "@/constant";
@@ -13,6 +14,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPoliceHead, setIsPoliceHead] = useState(false);
   const [isLoadingRole, setIsLoadingRole] = useState(true);
+  const pathname = usePathname();
   const { hasNewAlert } = useSOSAlertContext();
 
   useEffect(() => {
@@ -29,13 +31,13 @@ export default function Header() {
       });
   }, []);
 
-  const baseLinks = [
+  const baseLinks: { label: string; href: string; isSOS?: boolean }[] = [
     { label: "Home", href: "/police" },
     { label: "SOS Alerts", href: "/police/sos-alerts", isSOS: true },
     { label: "Map", href: "/police/map" },
   ];
 
-  const policeHeadLinks = isPoliceHead
+  const policeHeadLinks: { label: string; href: string; isSOS?: boolean }[] = isPoliceHead
     ? [{ label: "Add Officer", href: "/police/add-officer" }]
     : [];
 
@@ -58,19 +60,24 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {navigationLinks.map((link) => (
-              <Link key={link.href} href={link.href}>
-                <Button
-                  variant="ghost"
-                  className={`text-sm font-medium text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9] rounded-xl transition-colors px-3 py-2 ${
-                    link.isSOS && hasNewAlert ? "animate-pulse bg-red-100 text-red-700 font-bold" : ""
-                  }`}
-                >
-                  {link.isSOS && hasNewAlert && <AlertCircle className="h-4 w-4 mr-1" />}
-                  {link.label}
-                </Button>
-              </Link>
-            ))}
+            {navigationLinks.map((link) => {
+              const isBasePath = link.href.split("/").filter(Boolean).length === 1;
+              const isActive = isBasePath ? pathname === link.href : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              const sosAlert = link.isSOS && hasNewAlert;
+              return (
+                <Link key={link.href} href={link.href}>
+                  <Button
+                    variant="ghost"
+                    className={`text-sm font-medium rounded-xl transition-colors px-3 py-2 ${
+                      sosAlert ? "animate-pulse bg-red-100 text-red-700 font-bold" : isActive ? "bg-[#EDEEF9] text-[#6B46C1] font-semibold" : "text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9]"
+                    }`}
+                  >
+                    {link.isSOS && hasNewAlert && <AlertCircle className="h-4 w-4 mr-1" />}
+                    {link.label}
+                  </Button>
+                </Link>
+              );
+            })}
             {/* Logout Button */}
             <Button
               variant="outline"
@@ -100,23 +107,28 @@ export default function Header() {
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
           <nav className="lg:hidden mt-4 flex flex-col gap-2 pb-2">
-            {navigationLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Button
-                  variant="ghost"
-                  className={`w-full justify-start text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9] rounded-xl py-2.5 ${
-                    link.isSOS && hasNewAlert ? "animate-pulse bg-red-100 text-red-700 font-bold" : ""
-                  }`}
+            {navigationLinks.map((link) => {
+              const isBasePath = link.href.split("/").filter(Boolean).length === 1;
+              const isActive = isBasePath ? pathname === link.href : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              const sosAlert = link.isSOS && hasNewAlert;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  {link.isSOS && hasNewAlert && <AlertCircle className="h-4 w-4 mr-2" />}
-                  {link.label}
-                </Button>
-              </Link>
-            ))}
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start rounded-xl py-2.5 ${
+                      sosAlert ? "animate-pulse bg-red-100 text-red-700 font-bold" : isActive ? "bg-[#EDEEF9] text-[#6B46C1] font-semibold" : "text-slate-600 hover:text-[#6B46C1] hover:bg-[#EDEEF9]"
+                    }`}
+                  >
+                    {link.isSOS && hasNewAlert && <AlertCircle className="h-4 w-4 mr-2" />}
+                    {link.label}
+                  </Button>
+                </Link>
+              );
+            })}
             {/* Mobile Logout */}
             <Button
               variant="outline"

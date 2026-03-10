@@ -102,13 +102,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/driver/:path*",
-    "/user/:path*",
-    "/franchising/:path*",
-    "/cttmo/:path*",
-    "/login",
-  ],
-  matcher: ["/admin/:path*", "/driver/:path*", "/user/:path*","/franchising/:path*","/cttmo/:path*", "/login"],
+  matcher: ["/admin/:path*", "/driver/:path*", "/user/:path*", "/franchising/:path*", "/cttmo/:path*", "/operator/:path*", "/police/:path*", "/login"],
 };

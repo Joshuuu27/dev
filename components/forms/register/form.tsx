@@ -20,7 +20,10 @@ import {
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [suffix, setSuffix] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,10 +35,10 @@ export function RegisterForm() {
     e.preventDefault();
 
     // Validate inputs
-    if (!name || !email || !password || !confirmPassword) {
+    if (!firstName.trim() || !lastName.trim() || !email || !password || !confirmPassword) {
       showToast({
         type: "error",
-        message: "Please fill in all fields.",
+        message: "Please fill in first name, last name, email and passwords.",
         actionLabel: "Dismiss",
       });
       return;
@@ -81,7 +84,10 @@ export function RegisterForm() {
           body: JSON.stringify({
             uid: user.uid,
             email,
-            name,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            middleName: middleName.trim() || undefined,
+            suffix: suffix.trim() || undefined,
             role,
           }),
         });
@@ -142,25 +148,80 @@ export function RegisterForm() {
           </SelectContent>
         </Select>
       </div>
-      {/* Layer 1: Name + Email */}
+      {/* Layer 1: Name fields + Email */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="fullName" className="text-sm font-medium text-slate-700">
-            Full Name
+          <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">
+            First Name
           </Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <Input
-              id="fullName"
+              id="firstName"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
               className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
               required
             />
           </div>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="lastName" className="text-sm font-medium text-slate-700">
+            Last Name
+          </Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="middleName" className="text-sm font-medium text-slate-700">
+            Middle Name <span className="text-slate-400 font-normal">(optional)</span>
+          </Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="middleName"
+              type="text"
+              value={middleName}
+              onChange={(e) => setMiddleName(e.target.value)}
+              placeholder="Middle name"
+              className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="suffix" className="text-sm font-medium text-slate-700">
+            Suffix <span className="text-slate-400 font-normal">(e.g. Jr., Sr., III)</span>
+          </Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              id="suffix"
+              type="text"
+              value={suffix}
+              onChange={(e) => setSuffix(e.target.value)}
+              placeholder="Optional"
+              className="pl-10 h-11 text-sm rounded-xl bg-[#EDEEF9] border-0 focus:bg-[#E4E6F4] focus:ring-2 focus:ring-[#6B46C1]/30 transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-slate-700">
             Email Address

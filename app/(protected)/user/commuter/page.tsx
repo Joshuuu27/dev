@@ -322,6 +322,16 @@ export default function Home() {
     }
   }, [isTracking]) // Remove mapClickMode from dependencies, use ref instead
 
+  // When map resolves place name from current/from or destination coords (e.g. after tracking or raw coords), update labels
+  const handleStartingPointResolved = useCallback((address: string) => {
+    if (isTracking) return
+    setStartingPoint(address)
+  }, [isTracking])
+
+  const handleDestinationResolved = useCallback((address: string) => {
+    setDestination(address)
+  }, [])
+
   const handleToggleTracking = useCallback(() => {
     // If we are currently tracking, stop and complete the trip
     if (isTracking) {
@@ -468,6 +478,8 @@ export default function Home() {
           onFareChange={handleFareChange}
           onFareCalculating={handleFareCalculating}
           onMapClick={handleMapClick}
+          onStartingPointResolved={handleStartingPointResolved}
+          onDestinationResolved={handleDestinationResolved}
           startTracking={isTracking}
         />
       </div>

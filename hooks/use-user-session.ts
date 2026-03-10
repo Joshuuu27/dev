@@ -16,6 +16,10 @@ const formatAuthUser = (user: FirebaseUser): AuthUser => ({
   email: user.email,
 });
 
+export function useUserSession(session: string | null): string | null {
+  return session;
+}
+
 export default function useFirebaseAuth() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);

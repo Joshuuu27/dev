@@ -54,8 +54,8 @@ export const columns: ColumnDef<Operator>[] = [
     header: "Created",
     cell: ({ row }) => {
       const date = row.getValue("createdAt");
-      if (!date) return "N/A";
-      const createdDate = new Date(date);
+      if (date == null || typeof date !== "string" && typeof date !== "number" && !(date instanceof Date)) return "N/A";
+      const createdDate = new Date(date as string | number | Date);
       return createdDate.toLocaleDateString();
     },
   },
