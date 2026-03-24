@@ -21,8 +21,8 @@ export async function GET() {
     let firebaseError = null;
 
     try {
-      const module = await import("@/lib/firebase.admin");
-      firebaseAdmin = module.firebaseAdmin;
+      const firebaseModule = await import("@/lib/firebase.admin");
+      firebaseAdmin = firebaseModule.firebaseAdmin;
       console.log("[DEBUG-UPLOAD] Firebase admin imported successfully");
     } catch (err: any) {
       firebaseError = err.message;

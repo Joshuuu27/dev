@@ -69,6 +69,112 @@ export function DataTable<TData>({
   emptyMessage = "No data was found.",
   extraToolbarContent,
 }: DataTableProps<TData>) {
+  if (externalTable) {
+    return (
+      <DataTableExternal
+        table={externalTable}
+        className={className}
+        showColumnFilter={showColumnFilter}
+        showColumnToggle={showColumnToggle}
+        showPagination={showPagination}
+        emptyMessage={emptyMessage}
+        onRowClick={onRowClick}
+        getRowClassName={getRowClassName}
+        extraToolbarContent={extraToolbarContent}
+      />
+    );
+  }
+
+  if (!data || !columns) {
+    throw new Error("Either 'table' prop or both 'data' and 'columns' props must be provided");
+  }
+
+  return (
+    <DataTableInternal
+      data={data}
+      columns={columns}
+      className={className}
+      showOrderNumbers={showOrderNumbers}
+      rowsPerPage={rowsPerPage}
+      onRowClick={onRowClick}
+      getRowClassName={getRowClassName}
+      showPagination={showPagination}
+      showColumnFilter={showColumnFilter}
+      showColumnToggle={showColumnToggle}
+      emptyMessage={emptyMessage}
+      extraToolbarContent={extraToolbarContent}
+    />
+  );
+}
+
+function DataTableExternal<TData>({
+  table,
+  className,
+  showPagination,
+  showColumnFilter,
+  showColumnToggle,
+  emptyMessage,
+  onRowClick,
+  getRowClassName,
+  extraToolbarContent,
+}: {
+  table: TanStackTable<TData>;
+  className: string;
+  showPagination: boolean;
+  showColumnFilter: boolean;
+  showColumnToggle: boolean;
+  emptyMessage: string;
+  onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
+  extraToolbarContent?: React.ReactNode;
+}) {
+  const numberedColumns = table.getAllColumns().map((col) => col.columnDef) as ColumnDef<TData>[];
+  const filterColumns = numberedColumns;
+
+  return (
+    <DataTableShell
+      table={table}
+      numberedColumns={numberedColumns}
+      filterColumns={filterColumns}
+      className={className}
+      showPagination={showPagination}
+      showColumnFilter={showColumnFilter}
+      showColumnToggle={showColumnToggle}
+      emptyMessage={emptyMessage}
+      onRowClick={onRowClick}
+      getRowClassName={getRowClassName}
+      extraToolbarContent={extraToolbarContent}
+    />
+  );
+}
+
+function DataTableInternal<TData>({
+  data,
+  columns,
+  className,
+  showOrderNumbers,
+  rowsPerPage,
+  onRowClick,
+  getRowClassName,
+  showPagination,
+  showColumnFilter,
+  showColumnToggle,
+  emptyMessage,
+  extraToolbarContent,
+}: {
+  data: TData[];
+  columns: ColumnDef<TData>[];
+  className: string;
+  showOrderNumbers: boolean;
+  rowsPerPage: number;
+  onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
+  showPagination: boolean;
+  showColumnFilter: boolean;
+  showColumnToggle: boolean;
+  emptyMessage: string;
+  extraToolbarContent?: React.ReactNode;
+}) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -77,63 +183,83 @@ export function DataTable<TData>({
     pageSize: rowsPerPage,
   });
 
-  // If external table is provided, use it; otherwise create internal table
-  let table: TanStackTable<TData>;
-  let numberedColumns: ColumnDef<TData>[];
-  let filterColumns: ColumnDef<TData>[];
+  const numberedColumns: ColumnDef<TData>[] = showOrderNumbers
+    ? [
+        {
+          id: "__rowNumber",
+          header: "#",
+          cell: ({ row }) => row.index + 1 + pagination.pageIndex * pagination.pageSize,
+          enableSorting: false,
+          enableHiding: false,
+          size: 50,
+        },
+        ...columns,
+      ]
+    : columns;
 
-  if (externalTable) {
-    // Use external table from useDataTable hook
-    table = externalTable;
-    // Extract column definitions from the table
-    numberedColumns = table.getAllColumns().map(col => col.columnDef) as ColumnDef<TData>[];
-    filterColumns = numberedColumns;
-  } else {
-    // Create internal table with data and columns
-    if (!data || !columns) {
-      throw new Error("Either 'table' prop or both 'data' and 'columns' props must be provided");
-    }
+  const filterColumns: ColumnDef<TData>[] = columns;
 
-    /**
-     * AUTO-INJECT ROW NUMBER COLUMN
-     */
-    numberedColumns = showOrderNumbers
-      ? [
-          {
-            id: "__rowNumber",
-            header: "#",
-            cell: ({ row }) =>
-              row.index + 1 + pagination.pageIndex * pagination.pageSize,
-            enableSorting: false,
-            enableHiding: false,
-            size: 50,
-          },
-          ...columns,
-        ]
-      : columns;
+  const table = useReactTable({
+    data,
+    columns: numberedColumns,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      pagination,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
-    filterColumns = columns;
+  return (
+    <DataTableShell
+      table={table}
+      numberedColumns={numberedColumns}
+      filterColumns={filterColumns}
+      className={className}
+      showPagination={showPagination}
+      showColumnFilter={showColumnFilter}
+      showColumnToggle={showColumnToggle}
+      emptyMessage={emptyMessage}
+      onRowClick={onRowClick}
+      getRowClassName={getRowClassName}
+      extraToolbarContent={extraToolbarContent}
+    />
+  );
+}
 
-    table = useReactTable({
-      data,
-      columns: numberedColumns,
-      state: {
-        sorting,
-        columnFilters,
-        columnVisibility,
-        pagination,
-      },
-      onSortingChange: setSorting,
-      onColumnFiltersChange: setColumnFilters,
-      onColumnVisibilityChange: setColumnVisibility,
-      onPaginationChange: setPagination,
-      getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      getFilteredRowModel: getFilteredRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-    });
-  }
-
+function DataTableShell<TData>({
+  table,
+  numberedColumns,
+  filterColumns,
+  className,
+  showPagination,
+  showColumnFilter,
+  showColumnToggle,
+  emptyMessage,
+  onRowClick,
+  getRowClassName,
+  extraToolbarContent,
+}: {
+  table: TanStackTable<TData>;
+  numberedColumns: ColumnDef<TData>[];
+  filterColumns: ColumnDef<TData>[];
+  className: string;
+  showPagination: boolean;
+  showColumnFilter: boolean;
+  showColumnToggle: boolean;
+  emptyMessage: string;
+  onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
+  extraToolbarContent?: React.ReactNode;
+}) {
   return (
     <>
       {/* Table Controls - stack on mobile to prevent Filter dropdown overlapping Customize Columns */}

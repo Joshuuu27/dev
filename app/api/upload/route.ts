@@ -128,8 +128,8 @@ async function handleUpload(req: Request) {
     let firebaseAdmin: any;
     try {
       console.log("[UPLOAD] Importing Firebase admin...");
-      const module = await import("@/lib/firebase.admin");
-      firebaseAdmin = module.firebaseAdmin;
+      const firebaseModule = await import("@/lib/firebase.admin");
+      firebaseAdmin = firebaseModule.firebaseAdmin;
       console.log("[UPLOAD] Firebase admin imported successfully");
     } catch (importError: any) {
       return createErrorResponse(importError, "FIREBASE_IMPORT");
